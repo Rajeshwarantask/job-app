@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Menu, Bell, User, Plus, Target, TrendingUp, Users, Mail, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 interface HeaderProps {
   onAddJob: () => void;
@@ -12,6 +13,7 @@ export const Header = ({ onAddJob }: HeaderProps) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const hamburgerMenuItems = [
     { icon: Plus, label: "Add Job", action: onAddJob },
@@ -20,6 +22,11 @@ export const Header = ({ onAddJob }: HeaderProps) => {
     { icon: Mail, label: "Email Settings", action: () => navigate("/email-settings") },
     { icon: Clock, label: "View Timeline", action: () => console.log("Timeline clicked") },
   ];
+
+  const handleSignOut = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <>
@@ -62,7 +69,8 @@ export const Header = ({ onAddJob }: HeaderProps) => {
                 <img
                   src="/favicon.ico"
                   alt="JobTrail Logo"
-                  className="h-8 w-8 rounded-full"></img>
+                  className="h-8 w-8 rounded-full"
+                />
                 <span className="text-xl font-bold text-gray-800">JobTrail</span>
               </div>
             </div>
@@ -98,24 +106,32 @@ export const Header = ({ onAddJob }: HeaderProps) => {
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
                   className="hover:bg-gray-100 rounded-full profile-avatar"
                 >
-                  <User className="h-5 w-5 text-gray-600" />
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="h-8 w-8 rounded-full"
+                    />
+                  ) : (
+                    <User className="h-5 w-5 text-gray-600" />
+                  )}
                 </Button>
                 
                 {showProfileMenu && (
                   <div className="profile-menu">
                     <div className="profile-preamble">
-                      <p className="font-medium text-gray-800">John Doe</p>
-                      <p className="text-xs text-gray-500">john@example.com</p>
+                      <p className="font-medium text-gray-800">{user?.name || 'User'}</p>
+                      <p className="text-xs text-gray-500">{user?.email || 'user@example.com'}</p>
                     </div>
                     
                     <ul>
-                      <li>Profile Settings</li>
-                      <li>Preferences</li>
-                      <li>Help & Support</li>
+                      <li onClick={() => setShowProfileMenu(false)}>Profile Settings</li>
+                      <li onClick={() => setShowProfileMenu(false)}>Preferences</li>
+                      <li onClick={() => setShowProfileMenu(false)}>Help & Support</li>
                     </ul>
                     
                     <div className="profile-submenu">
-                      <div className="profile-signout">
+                      <div className="profile-signout" onClick={handleSignOut}>
                         Sign Out
                       </div>
                     </div>
@@ -185,6 +201,9 @@ export const Header = ({ onAddJob }: HeaderProps) => {
           color: #e74c3c;
           cursor: pointer;
           font-size: 14px;
+        }
+        .profile-signout:hover {
+          background: #f4f4f4;
         }
         .profile-submenu {
           border-top: 1px solid #eee;

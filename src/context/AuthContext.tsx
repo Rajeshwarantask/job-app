@@ -39,7 +39,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    checkAuthStatus();
+    // Add a small delay to prevent flash
+    setTimeout(checkAuthStatus, 100);
   }, []);
 
   const login = async (email: string, password: string) => {

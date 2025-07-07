@@ -21,49 +21,61 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <GmailProvider>
-        <JobsProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                {/* Public routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                
-                {/* Protected routes */}
-                <Route path="/" element={
-                  <ProtectedRoute>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            
+            {/* Protected routes */}
+            <Route path="/" element={
+              <ProtectedRoute>
+                <GmailProvider>
+                  <JobsProvider>
                     <Index />
-                  </ProtectedRoute>
-                } />
-                <Route path="/job/:jobId" element={
-                  <ProtectedRoute>
+                  </JobsProvider>
+                </GmailProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="/job/:jobId" element={
+              <ProtectedRoute>
+                <GmailProvider>
+                  <JobsProvider>
                     <JobDetailRoute />
-                  </ProtectedRoute>
-                } />
-                <Route path="/analytics" element={
-                  <ProtectedRoute>
+                  </JobsProvider>
+                </GmailProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="/analytics" element={
+              <ProtectedRoute>
+                <GmailProvider>
+                  <JobsProvider>
                     <AnalyticsRoute />
-                  </ProtectedRoute>
-                } />
-                <Route path="/email-settings" element={
-                  <ProtectedRoute>
+                  </JobsProvider>
+                </GmailProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="/email-settings" element={
+              <ProtectedRoute>
+                <GmailProvider>
+                  <JobsProvider>
                     <EmailSettings />
-                  </ProtectedRoute>
-                } />
-                
-                {/* Catch all route */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </JobsProvider>
-      </GmailProvider>
-    </AuthProvider>
+                  </JobsProvider>
+                </GmailProvider>
+              </ProtectedRoute>
+            } />
+            
+            {/* Catch all route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 

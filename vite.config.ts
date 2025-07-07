@@ -11,4 +11,10 @@ export default defineConfig(({ mode }: { mode: string }) => ({
     },
   },
   plugins: [react()],
+  define: {
+    global: 'globalThis',
+    process: {
+      env: {}
+    }
+  },
 }));

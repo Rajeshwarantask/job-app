@@ -1,17 +1,11 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { EmailIntegration } from "@/components/EmailIntegration";
+import { GmailIntegration } from "@/components/GmailIntegration";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
 export const EmailSettings = () => {
   const navigate = useNavigate();
-  const [integrationActive, setIntegrationActive] = useState(false);
-
-  const handleToggleIntegration = () => {
-    setIntegrationActive(!integrationActive);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -36,7 +30,7 @@ export const EmailSettings = () => {
           </div>
 
           <div className="max-w-4xl">
-            <EmailIntegration onToggleIntegration={handleToggleIntegration} />
+            <GmailIntegration />
           </div>
         </div>
       </div>

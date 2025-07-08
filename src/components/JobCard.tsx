@@ -36,7 +36,7 @@ export const JobCard = ({ job, onUpdateStatus, onDelete }: JobCardProps) => {
   const navigate = useNavigate();
 
   return (
-    <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300 group">
+    <Card className="bg-white/5 backdrop-blur-sm border-white/10 hover:bg-white/10 transition-all duration-300 group">
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">

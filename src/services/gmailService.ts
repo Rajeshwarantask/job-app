@@ -1,5 +1,3 @@
-import { google } from 'googleapis';
-
 export interface EmailMessage {
   id: string;
   threadId: string;
@@ -19,18 +17,179 @@ export interface ParsedJobEmail {
   sender: string;
 }
 
+// Mock OAuth2 client for frontend simulation
+class MockOAuth2Client {
+  private credentials: any = null;
+
+  constructor(clientId: string, clientSecret: string, redirectUri: string) {
+    // Mock constructor - store config if needed
+  }
+
+  generateAuthUrl(options: any): string {
+    // Return a mock auth URL for simulation
+    return `https://accounts.google.com/oauth/authorize?client_id=mock&redirect_uri=${encodeURIComponent(options.redirect_uri || '')}&scope=${encodeURIComponent(options.scope?.join(' ') || '')}&response_type=code&access_type=${options.access_type || 'online'}`;
+  }
+
+  async getToken(code: string) {
+    // Mock token exchange
+    const mockTokens = {
+      access_token: 'mock_access_token_' + Date.now(),
+      refresh_token: 'mock_refresh_token_' + Date.now(),
+      scope: 'https://www.googleapis.com/auth/gmail.readonly',
+      token_type: 'Bearer',
+      expiry_date: Date.now() + 3600000
+    };
+    
+    this.credentials = mockTokens;
+    return { tokens: mockTokens };
+  }
+
+  setCredentials(tokens: any) {
+    this.credentials = tokens;
+  }
+
+  async refreshAccessToken() {
+    // Mock token refresh
+    const mockCredentials = {
+      access_token: 'mock_refreshed_access_token_' + Date.now(),
+      refresh_token: this.credentials?.refresh_token || 'mock_refresh_token',
+      scope: 'https://www.googleapis.com/auth/gmail.readonly',
+      token_type: 'Bearer',
+      expiry_date: Date.now() + 3600000
+    };
+    
+    this.credentials = mockCredentials;
+    return { credentials: mockCredentials };
+  }
+
+  async revokeCredentials() {
+    // Mock revoke
+    this.credentials = null;
+  }
+}
+
+// Mock Gmail API client for frontend simulation
+class MockGmailClient {
+  constructor(config: any) {
+    // Mock constructor
+  }
+
+  users = {
+    messages: {
+      list: async (params: any) => {
+        // Mock message list response
+        const mockMessages = this.generateMockMessages(params.maxResults || 10);
+        return {
+          data: {
+            messages: mockMessages.map(msg => ({ id: msg.id }))
+          }
+        };
+      },
+      get: async (params: any) => {
+        // Mock individual message response
+        const mockMessage = this.generateMockMessage(params.id);
+        return { data: mockMessage };
+      }
+    }
+  };
+
+  private generateMockMessages(count: number): EmailMessage[] {
+    const mockMessages: EmailMessage[] = [];
+    const companies = ['TechCorp', 'StartupXYZ', 'BigTech Inc', 'InnovateCo', 'DevCompany'];
+    const statuses = ['applied', 'interview', 'offer', 'rejected', 'test'];
+    
+    for (let i = 0; i < count; i++) {
+      const company = companies[Math.floor(Math.random() * companies.length)];
+      const status = statuses[Math.floor(Math.random() * statuses.length)];
+      const id = `mock_message_${i}_${Date.now()}`;
+      
+      mockMessages.push({
+        id,
+        threadId: `thread_${i}`,
+        snippet: this.generateMockSnippet(status, company),
+        payload: this.generateMockPayload(status, company, id),
+        internalDate: (Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toString()
+      });
+    }
+    
+    return mockMessages;
+  }
+
+  private generateMockMessage(id: string): EmailMessage {
+    const companies = ['TechCorp', 'StartupXYZ', 'BigTech Inc', 'InnovateCo', 'DevCompany'];
+    const statuses = ['applied', 'interview', 'offer', 'rejected', 'test'];
+    const company = companies[Math.floor(Math.random() * companies.length)];
+    const status = statuses[Math.floor(Math.random() * statuses.length)];
+    
+    return {
+      id,
+      threadId: `thread_${id}`,
+      snippet: this.generateMockSnippet(status, company),
+      payload: this.generateMockPayload(status, company, id),
+      internalDate: (Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toString()
+    };
+  }
+
+  private generateMockSnippet(status: string, company: string): string {
+    const snippets = {
+      applied: `Thank you for your application to ${company}. We have received your application and will review it shortly.`,
+      interview: `Congratulations! We would like to invite you for an interview at ${company}. Please let us know your availability.`,
+      offer: `We are pleased to extend a job offer from ${company}. Congratulations on your successful application!`,
+      rejected: `Thank you for your interest in ${company}. Unfortunately, we have decided to move forward with other candidates.`,
+      test: `Please complete this coding challenge for your application to ${company}. You have 48 hours to submit your solution.`
+    };
+    
+    return snippets[status as keyof typeof snippets] || `Update regarding your application to ${company}.`;
+  }
+
+  private generateMockPayload(status: string, company: string, messageId: string): any {
+    const subjects = {
+      applied: `Application Received - ${company}`,
+      interview: `Interview Invitation - ${company}`,
+      offer: `Job Offer - ${company}`,
+      rejected: `Application Update - ${company}`,
+      test: `Coding Challenge - ${company}`
+    };
+
+    const bodies = {
+      applied: `Dear Candidate,\n\nThank you for your application to the Software Engineer position at ${company}. We have received your application and our team will review it carefully.\n\nWe will be in touch within the next few days.\n\nBest regards,\n${company} HR Team`,
+      interview: `Dear Candidate,\n\nCongratulations! We were impressed with your application and would like to invite you for an interview.\n\nPlease reply with your availability for next week.\n\nBest regards,\n${company} Hiring Team`,
+      offer: `Dear Candidate,\n\nWe are delighted to extend an offer for the Software Engineer position at ${company}.\n\nPlease review the attached offer letter and let us know your decision.\n\nCongratulations!\n\n${company} HR Team`,
+      rejected: `Dear Candidate,\n\nThank you for your interest in ${company} and for taking the time to apply.\n\nAfter careful consideration, we have decided to move forward with other candidates.\n\nWe wish you the best in your job search.\n\n${company} HR Team`,
+      test: `Dear Candidate,\n\nAs the next step in our interview process, please complete the attached coding challenge.\n\nYou have 48 hours to submit your solution.\n\nGood luck!\n\n${company} Engineering Team`
+    };
+
+    const subject = subjects[status as keyof typeof subjects] || `Update from ${company}`;
+    const body = bodies[status as keyof typeof bodies] || `Update regarding your application to ${company}.`;
+    const encodedBody = Buffer.from(body).toString('base64');
+
+    return {
+      headers: [
+        { name: 'Subject', value: subject },
+        { name: 'From', value: `noreply@${company.toLowerCase().replace(/\s+/g, '')}.com` },
+        { name: 'To', value: 'candidate@example.com' },
+        { name: 'Date', value: new Date().toUTCString() }
+      ],
+      body: {
+        data: encodedBody
+      },
+      mimeType: 'text/plain'
+    };
+  }
+}
+
 class GmailService {
-  private oauth2Client: any;
-  private gmail: any;
+  private oauth2Client: MockOAuth2Client;
+  private gmail: MockGmailClient;
 
   constructor() {
-    this.oauth2Client = new google.auth.OAuth2(
-      process.env.VITE_GOOGLE_CLIENT_ID,
-      process.env.VITE_GOOGLE_CLIENT_SECRET,
-      process.env.VITE_GOOGLE_REDIRECT_URI
+    this.oauth2Client = new MockOAuth2Client(
+      import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+      import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '',
+      import.meta.env.VITE_GOOGLE_REDIRECT_URI || ''
     );
 
-    this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
+    this.gmail = new MockGmailClient({ version: 'v1', auth: this.oauth2Client });
   }
 
   // Initialize OAuth flow

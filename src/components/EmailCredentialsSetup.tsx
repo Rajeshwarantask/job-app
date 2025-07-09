@@ -143,7 +143,7 @@ export const EmailCredentialsSetup = ({ onCredentialsSet, isConnected }: EmailCr
             <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded">
               <p className="text-yellow-300 text-xs">
                 <strong>Important:</strong> Make sure your OAuth client is not deleted in Google Cloud Console. 
-                If you see "deleted_client" errors, recreate your OAuth credentials.
+                If you see "deleted_client\" errors, recreate your OAuth credentials.
               </p>
             </div>
           </div>

@@ -14,21 +14,11 @@ import {
   Trash2
 } from 'lucide-react';
 
-interface EmailData {
-  id: string;
-  subject: string;
-  sender: string;
-  company: string;
-  snippet: string;
-  date: Date;
-  status: 'applied' | 'interview' | 'offer' | 'rejected' | 'test' | null;
-  confidence: number;
-  isRead: boolean;
-}
+import { ProcessedEmail } from '@/services/gmailOAuthService';
 
 interface EmailInboxDisplayProps {
   isConnected: boolean;
-  emails: EmailData[];
+  emails: ProcessedEmail[];
   onRefresh: () => void;
   isLoading: boolean;
 }
@@ -36,7 +26,7 @@ interface EmailInboxDisplayProps {
 export const EmailInboxDisplay = ({ isConnected, emails, onRefresh, isLoading }: EmailInboxDisplayProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filteredEmails, setFilteredEmails] = useState<EmailData[]>(emails);
+  const [filteredEmails, setFilteredEmails] = useState<ProcessedEmail[]>(emails);
 
   useEffect(() => {
     let filtered = emails;

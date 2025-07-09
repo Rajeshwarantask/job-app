@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useGmail } from '@/context/GmailContext';
 import { useJobs } from '@/context/JobsContext';
-import { emailProcessor, EmailJobMatch } from '@/services/emailProcessor';
+import { emailProcessor } from '@/services/emailProcessor';
+import type { EmailJobMatch } from '@/services/emailProcessor';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Mail, 

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { realGmailService, EmailData, GmailCredentials } from '@/services/realGmailService';
+import { gmailOAuthService, GmailCredentials, ProcessedEmail } from '@/services/gmailOAuthService';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -8,7 +8,7 @@ interface GmailContextType {
   isConnected: boolean;
   isConnecting: boolean;
   lastSync: Date | null;
-  processedEmails: EmailData[];
+  processedEmails: ProcessedEmail[];
   userEmail: string | null;
   setCredentials: (credentials: GmailCredentials) => void;
   connectGmail: () => Promise<void>;
@@ -24,7 +24,7 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [lastSync, setLastSync] = useState<Date | null>(null);
-  const [processedEmails, setProcessedEmails] = useState<EmailData[]>([]);
+  const [processedEmails, setProcessedEmails] = useState<ProcessedEmail[]>([]);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -42,7 +42,7 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
       const stored = localStorage.getItem(`gmail_credentials_${user?.id}`);
       if (stored) {
         const credentials = JSON.parse(stored);
-        realGmailService.setCredentials(credentials);
+        gmailOAuthService.setCredentials(credentials);
         setHasCredentials(true);
       }
     } catch (error) {
@@ -58,7 +58,7 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
       
       if (tokens && connected === 'true') {
         const parsedTokens = JSON.parse(tokens);
-        realGmailService.setTokens(parsedTokens);
+        gmailOAuthService.setTokens(parsedTokens);
         setIsConnected(true);
         setUserEmail(email);
         
@@ -88,7 +88,7 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const saveProcessedEmails = (emails: EmailData[]) => {
+  const saveProcessedEmails = (emails: ProcessedEmail[]) => {
     try {
       localStorage.setItem(`gmail_processed_emails_${user?.id}`, JSON.stringify(emails));
       setProcessedEmails(emails);
@@ -101,8 +101,13 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
 
     try {
-      localStorage.setItem(`gmail_credentials_${user.id}`, JSON.stringify(credentials));
-      realGmailService.setCredentials(credentials);
+      const credentialsWithRedirect = {
+        ...credentials,
+        redirectUri: `${window.location.origin}/auth/callback`
+      };
+
+      localStorage.setItem(`gmail_credentials_${user.id}`, JSON.stringify(credentialsWithRedirect));
+      gmailOAuthService.setCredentials(credentialsWithRedirect);
       setHasCredentials(true);
 
       toast({
@@ -120,12 +125,19 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const connectGmail = async () => {
-    if (!user || !hasCredentials) return;
+    if (!user || !hasCredentials) {
+      toast({
+        title: "Configuration Required",
+        description: "Please set up your OAuth credentials first.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setIsConnecting(true);
     try {
       // Get authorization URL and redirect user
-      const authUrl = realGmailService.getAuthUrl();
+      const authUrl = gmailOAuthService.getAuthUrl();
       
       // Open popup window for OAuth
       const popup = window.open(
@@ -133,6 +145,10 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
         'gmail-oauth',
         'width=500,height=600,scrollbars=yes,resizable=yes'
       );
+
+      if (!popup) {
+        throw new Error('Popup blocked. Please allow popups for this site.');
+      }
 
       // Listen for the OAuth callback
       const handleCallback = async (event: MessageEvent) => {
@@ -143,10 +159,10 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
           
           try {
             // Exchange code for tokens
-            const tokens = await realGmailService.exchangeCodeForTokens(code);
+            const tokens = await gmailOAuthService.exchangeCodeForTokens(code);
             
             // Get user info
-            const userInfo = await realGmailService.getUserInfo();
+            const userInfo = await gmailOAuthService.getUserInfo();
             
             // Store tokens and user info
             localStorage.setItem(`gmail_tokens_${user.id}`, JSON.stringify(tokens));
@@ -166,11 +182,10 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
             
           } catch (error) {
             console.error('Error during OAuth callback:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
             toast({
               title: "Connection Failed",
-              description: error instanceof Error && error.message.includes('deleted_client') 
-                ? "OAuth client configuration error. Please check your Google Cloud Console settings."
-                : "Failed to complete Gmail connection. Please try again.",
+              description: errorMessage,
               variant: "destructive"
             });
           }
@@ -180,10 +195,12 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
         } else if (event.data.type === 'GMAIL_OAUTH_ERROR') {
           const errorMessage = event.data.error === 'deleted_client' 
             ? "OAuth client has been deleted. Please reconfigure your Google Cloud Console settings."
-            : "Gmail connection was cancelled or failed.";
+            : event.data.error === 'access_denied'
+            ? "Access was denied. Please grant permission to continue."
+            : "Gmail connection failed. Please try again.";
             
           toast({
-            title: event.data.error === 'deleted_client' ? "Configuration Error" : "Connection Cancelled",
+            title: event.data.error === 'deleted_client' ? "Configuration Error" : "Connection Failed",
             description: errorMessage,
             variant: "destructive"
           });
@@ -205,51 +222,10 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
 
     } catch (error) {
       console.error('Error initiating OAuth:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: "Connection Failed",
-        description: "Unable to start Gmail connection. Please check your OAuth credentials in Google Cloud Console.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
-  // For development/demo purposes - simulate connection
-  const connectGmailDemo = async () => {
-    if (!user || !hasCredentials) return;
-
-    setIsConnecting(true);
-    try {
-      // Simulate OAuth flow
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockTokens = {
-        access_token: 'demo_access_token',
-        refresh_token: 'demo_refresh_token',
-        scope: 'https://www.googleapis.com/auth/gmail.readonly',
-        token_type: 'Bearer',
-        expiry_date: Date.now() + 3600000
-      };
-
-      localStorage.setItem(`gmail_tokens_${user.id}`, JSON.stringify(mockTokens));
-      localStorage.setItem(`gmail_connected_${user.id}`, 'true');
-      localStorage.setItem(`gmail_user_email_${user.id}`, user.email);
-      
-      setIsConnected(true);
-      setUserEmail(user.email);
-
-      toast({
-        title: "Gmail Connected! (Demo Mode)",
-        description: "Demo connection established. Showing sample emails.",
-      });
-
-      await syncEmailsDemo();
-    } catch (error) {
-      console.error('Error connecting Gmail:', error);
-      toast({
-        title: "Connection Failed",
-        description: "Unable to connect to Gmail. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -261,7 +237,7 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
 
     try {
-      await realGmailService.revokeAccess();
+      await gmailOAuthService.revokeAccess();
       
       // Clear stored data
       localStorage.removeItem(`gmail_credentials_${user.id}`);
@@ -295,7 +271,7 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
     if (!user || !isConnected) return;
 
     try {
-      const emails = await realGmailService.fetchEmails(50);
+      const emails = await gmailOAuthService.fetchEmails(50);
       
       const currentTime = new Date();
       saveProcessedEmails(emails);
@@ -308,73 +284,24 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
       });
     } catch (error) {
       console.error('Error syncing emails:', error);
-      toast({
-        title: "Sync Failed",
-        description: "Unable to sync emails. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Demo version for development
-  const syncEmailsDemo = async () => {
-    if (!user || !isConnected) return;
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      const mockEmails: EmailData[] = [
-        {
-          id: 'demo_1',
-          company: 'Google',
-          subject: 'Thank you for your application - Software Engineer',
-          sender: 'noreply@google.com',
-          snippet: 'Thank you for applying to the Software Engineer position at Google...',
-          date: new Date(Date.now() - 86400000),
-          status: 'applied',
-          confidence: 0.9,
-          isRead: true
-        },
-        {
-          id: 'demo_2',
-          company: 'Microsoft',
-          subject: 'Interview Invitation - Product Manager Role',
-          sender: 'careers@microsoft.com',
-          snippet: 'We are pleased to invite you for an interview for the Product Manager position...',
-          date: new Date(Date.now() - 43200000),
-          status: 'interview',
-          confidence: 0.95,
-          isRead: false
-        },
-        {
-          id: 'demo_3',
-          company: 'Meta',
-          subject: 'Coding Challenge - Frontend Developer',
-          sender: 'recruiting@meta.com',
-          snippet: 'Please complete the following coding challenge for the Frontend Developer role...',
-          date: new Date(Date.now() - 21600000),
-          status: 'test',
-          confidence: 0.85,
-          isRead: false
-        }
-      ];
-
-      const currentTime = new Date();
-      saveProcessedEmails(mockEmails);
-      setLastSync(currentTime);
-      localStorage.setItem(`gmail_last_sync_${user.id}`, currentTime.toISOString());
-
-      toast({
-        title: "Demo Emails Loaded",
-        description: `Found ${mockEmails.length} new job-related emails.`,
-      });
-    } catch (error) {
-      console.error('Error syncing emails:', error);
-      toast({
-        title: "Sync Failed",
-        description: "Unable to sync emails. Please try again.",
-        variant: "destructive"
-      });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      // Handle authentication errors
+      if (errorMessage.includes('Authentication expired')) {
+        setIsConnected(false);
+        localStorage.setItem(`gmail_connected_${user.id}`, 'false');
+        toast({
+          title: "Authentication Expired",
+          description: "Please reconnect your Gmail account.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Sync Failed",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -390,7 +317,7 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
     setCredentials,
     connectGmail,
     disconnectGmail,
-    syncEmails: process.env.NODE_ENV === 'development' ? syncEmailsDemo : syncEmails,
+    syncEmails,
     getConnectionStatus
   };
 

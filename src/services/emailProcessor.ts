@@ -1,8 +1,8 @@
-import { ParsedJobEmail } from './gmailService';
+import { ProcessedEmail } from './gmailOAuthService';
 import { Job } from '@/types/Job';
 
 export interface EmailJobMatch {
-  email: ParsedJobEmail;
+  email: ProcessedEmail;
   matchedJob: Job | null;
   confidence: number;
   suggestedAction: 'update_status' | 'create_job' | 'ignore';
@@ -10,12 +10,12 @@ export interface EmailJobMatch {
 
 class EmailProcessor {
   // Process emails and match them with existing jobs
-  processEmails(emails: ParsedJobEmail[], existingJobs: Job[]): EmailJobMatch[] {
+  processEmails(emails: ProcessedEmail[], existingJobs: Job[]): EmailJobMatch[] {
     return emails.map(email => this.matchEmailToJob(email, existingJobs));
   }
 
   // Match a single email to existing jobs
-  private matchEmailToJob(email: ParsedJobEmail, jobs: Job[]): EmailJobMatch {
+  private matchEmailToJob(email: ProcessedEmail, jobs: Job[]): EmailJobMatch {
     let bestMatch: Job | null = null;
     let bestScore = 0;
 
@@ -36,7 +36,7 @@ class EmailProcessor {
   }
 
   // Calculate how well an email matches a job
-  private calculateMatchScore(email: ParsedJobEmail, job: Job): number {
+  private calculateMatchScore(email: ProcessedEmail, job: Job): number {
     let score = 0;
     let factors = 0;
 
@@ -46,17 +46,17 @@ class EmailProcessor {
     factors += 0.4;
 
     // Role/position matching
-    const roleScore = this.findRoleInText(job.role, email.subject + ' ' + email.content);
+    const roleScore = this.findRoleInText(job.role, email.subject + ' ' + (email.fullContent || ''));
     score += roleScore * 0.3;
     factors += 0.3;
 
     // Date proximity (emails should be after application date)
-    const dateScore = this.calculateDateScore(email.timestamp, new Date(job.applicationDate));
+    const dateScore = this.calculateDateScore(email.date, new Date(job.applicationDate));
     score += dateScore * 0.2;
     factors += 0.2;
 
     // Status progression logic
-    const statusScore = this.calculateStatusScore(email.detectedStatus, job.status);
+    const statusScore = this.calculateStatusScore(email.status, job.status);
     score += statusScore * 0.1;
     factors += 0.1;
 
@@ -132,7 +132,7 @@ class EmailProcessor {
   }
 
   // Calculate score based on status progression
-  private calculateStatusScore(emailStatus: string | null, jobStatus: string): number {
+  private calculateStatusScore(emailStatus: ProcessedEmail['status'], jobStatus: string): number {
     if (!emailStatus) return 0.5;
 
     const statusProgression = {
@@ -155,18 +155,18 @@ class EmailProcessor {
 
   // Determine what action should be taken
   private determineSuggestedAction(
-    email: ParsedJobEmail, 
+    email: ProcessedEmail, 
     matchedJob: Job | null, 
     confidence: number
   ): 'update_status' | 'create_job' | 'ignore' {
-    if (!email.detectedStatus) return 'ignore';
+    if (!email.status) return 'ignore';
 
     if (matchedJob && confidence > 0.7) {
       // High confidence match - suggest status update
       return 'update_status';
     }
 
-    if (!matchedJob && email.detectedStatus === 'applied' && confidence < 0.3) {
+    if (!matchedJob && email.status === 'applied' && confidence < 0.3) {
       // No match and it's an application confirmation - suggest creating new job
       return 'create_job';
     }
@@ -175,13 +175,13 @@ class EmailProcessor {
   }
 
   // Generate a new job from email data
-  generateJobFromEmail(email: ParsedJobEmail): Omit<Job, 'id'> {
+  generateJobFromEmail(email: ProcessedEmail): Omit<Job, 'id'> {
     return {
       company: email.company,
       role: this.extractRoleFromEmail(email),
       platform: this.extractPlatformFromEmail(email),
-      applicationDate: email.timestamp.toISOString().split('T')[0],
-      status: email.detectedStatus || 'applied',
+      applicationDate: email.date.toISOString().split('T')[0],
+      status: email.status || 'applied',
       notes: `Auto-detected from email: ${email.subject}`,
       url: undefined,
       testDate: undefined,
@@ -190,7 +190,7 @@ class EmailProcessor {
   }
 
   // Extract role from email content
-  private extractRoleFromEmail(email: ParsedJobEmail): string {
+  private extractRoleFromEmail(email: ProcessedEmail): string {
     const subject = email.subject;
     
     // Common patterns for role extraction
@@ -215,7 +215,7 @@ class EmailProcessor {
   }
 
   // Extract platform from email sender
-  private extractPlatformFromEmail(email: ParsedJobEmail): string {
+  private extractPlatformFromEmail(email: ProcessedEmail): string {
     const sender = email.sender.toLowerCase();
 
     if (sender.includes('linkedin')) return 'LinkedIn';

@@ -135,10 +135,17 @@ export const EmailCredentialsSetup = ({ onCredentialsSet, isConnected }: EmailCr
             <ol className="text-gray-300 text-sm space-y-1 list-decimal list-inside">
               <li>Create a new project in Google Cloud Console</li>
               <li>Enable the Gmail API</li>
-              <li>Create OAuth 2.0 Client ID credentials</li>
-              <li>Add your domain to authorized origins</li>
+              <li>Create OAuth 2.0 Client ID credentials (Web application)</li>
+              <li>Add http://localhost:5173 to authorized JavaScript origins</li>
+              <li>Add http://localhost:5173/auth/callback to authorized redirect URIs</li>
               <li>Copy the Client ID and Secret below</li>
             </ol>
+            <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded">
+              <p className="text-yellow-300 text-xs">
+                <strong>Important:</strong> Make sure your OAuth client is not deleted in Google Cloud Console. 
+                If you see "deleted_client" errors, recreate your OAuth credentials.
+              </p>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

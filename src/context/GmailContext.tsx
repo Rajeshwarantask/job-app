@@ -168,7 +168,9 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
             console.error('Error during OAuth callback:', error);
             toast({
               title: "Connection Failed",
-              description: "Failed to complete Gmail connection. Please try again.",
+              description: error instanceof Error && error.message.includes('deleted_client') 
+                ? "OAuth client configuration error. Please check your Google Cloud Console settings."
+                : "Failed to complete Gmail connection. Please try again.",
               variant: "destructive"
             });
           }
@@ -176,9 +178,13 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
           popup?.close();
           window.removeEventListener('message', handleCallback);
         } else if (event.data.type === 'GMAIL_OAUTH_ERROR') {
+          const errorMessage = event.data.error === 'deleted_client' 
+            ? "OAuth client has been deleted. Please reconfigure your Google Cloud Console settings."
+            : "Gmail connection was cancelled or failed.";
+            
           toast({
-            title: "Connection Cancelled",
-            description: "Gmail connection was cancelled or failed.",
+            title: event.data.error === 'deleted_client' ? "Configuration Error" : "Connection Cancelled",
+            description: errorMessage,
             variant: "destructive"
           });
           popup?.close();
@@ -201,7 +207,7 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
       console.error('Error initiating OAuth:', error);
       toast({
         title: "Connection Failed",
-        description: "Unable to start Gmail connection. Please check your credentials.",
+        description: "Unable to start Gmail connection. Please check your OAuth credentials in Google Cloud Console.",
         variant: "destructive"
       });
     } finally {

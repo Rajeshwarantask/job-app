@@ -112,6 +112,9 @@ class EmailProcessor {
 
   // Calculate score based on date proximity
   private calculateDateScore(emailDate: Date, applicationDate: Date): number {
+    // Defensive check for undefined or null dates
+    if (!emailDate || !applicationDate) return 0;
+    
     const diffMs = emailDate.getTime() - applicationDate.getTime();
     const diffDays = diffMs / (1000 * 60 * 60 * 24);
 

@@ -139,86 +139,115 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
       // Get authorization URL and redirect user
       const authUrl = gmailOAuthService.getAuthUrl();
       
-      // Open popup window for OAuth
-      const popup = window.open(
-        authUrl,
-        'gmail-oauth',
-        'width=500,height=600,scrollbars=yes,resizable=yes'
-      );
+      // Try popup first, fallback to redirect if blocked
+      try {
+        const popup = window.open(
+          authUrl,
+          'gmail-oauth',
+          'width=500,height=600,scrollbars=yes,resizable=yes'
+        );
 
-      if (!popup) {
-        throw new Error('Popup blocked. Please allow popups for this site.');
-      }
-
-      // Listen for the OAuth callback
-      const handleCallback = async (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return;
-        
-        if (event.data.type === 'GMAIL_OAUTH_SUCCESS') {
-          const { code } = event.data;
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+          // Popup was blocked, use redirect method instead
+          toast({
+            title: "Redirecting to Google",
+            description: "You'll be redirected to Google for authentication.",
+          });
           
-          try {
-            // Exchange code for tokens
-            const tokens = await gmailOAuthService.exchangeCodeForTokens(code);
-            
-            // Get user info
-            const userInfo = await gmailOAuthService.getUserInfo();
-            
-            // Store tokens and user info
-            localStorage.setItem(`gmail_tokens_${user.id}`, JSON.stringify(tokens));
-            localStorage.setItem(`gmail_connected_${user.id}`, 'true');
-            localStorage.setItem(`gmail_user_email_${user.id}`, userInfo.email);
-            
-            setIsConnected(true);
-            setUserEmail(userInfo.email);
-            
-            toast({
-              title: "Gmail Connected!",
-              description: `Successfully connected ${userInfo.email}`,
-            });
+          // Store current page to return to after auth
+          localStorage.setItem('gmail_auth_return_url', window.location.pathname);
+          
+          // Redirect to Google OAuth
+          window.location.href = authUrl;
+          return;
+        }
 
-            // Perform initial sync
-            await syncEmails();
+        // Listen for the OAuth callback
+        const handleCallback = async (event: MessageEvent) => {
+          if (event.origin !== window.location.origin) return;
+          
+          if (event.data.type === 'GMAIL_OAUTH_SUCCESS') {
+            const { code } = event.data;
             
-          } catch (error) {
-            console.error('Error during OAuth callback:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            try {
+              // Exchange code for tokens
+              const tokens = await gmailOAuthService.exchangeCodeForTokens(code);
+              
+              // Get user info
+              const userInfo = await gmailOAuthService.getUserInfo();
+              
+              // Store tokens and user info
+              localStorage.setItem(`gmail_tokens_${user.id}`, JSON.stringify(tokens));
+              localStorage.setItem(`gmail_connected_${user.id}`, 'true');
+              localStorage.setItem(`gmail_user_email_${user.id}`, userInfo.email);
+              
+              setIsConnected(true);
+              setUserEmail(userInfo.email);
+              
+              toast({
+                title: "Gmail Connected!",
+                description: `Successfully connected ${userInfo.email}`,
+              });
+
+              // Perform initial sync
+              await syncEmails();
+              
+            } catch (error) {
+              console.error('Error during OAuth callback:', error);
+              const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+              toast({
+                title: "Connection Failed",
+                description: errorMessage,
+                variant: "destructive"
+              });
+            }
+            
+            popup?.close();
+            window.removeEventListener('message', handleCallback);
+          } else if (event.data.type === 'GMAIL_OAUTH_ERROR') {
+            const errorMessage = event.data.error === 'deleted_client' 
+              ? "OAuth client has been deleted. Please reconfigure your Google Cloud Console settings."
+              : event.data.error === 'access_denied'
+              ? "Access was denied. Please grant permission to continue."
+              : "Gmail connection failed. Please try again.";
+              
             toast({
-              title: "Connection Failed",
+              title: event.data.error === 'deleted_client' ? "Configuration Error" : "Connection Failed",
               description: errorMessage,
               variant: "destructive"
             });
+            popup?.close();
+            window.removeEventListener('message', handleCallback);
           }
-          
-          popup?.close();
-          window.removeEventListener('message', handleCallback);
-        } else if (event.data.type === 'GMAIL_OAUTH_ERROR') {
-          const errorMessage = event.data.error === 'deleted_client' 
-            ? "OAuth client has been deleted. Please reconfigure your Google Cloud Console settings."
-            : event.data.error === 'access_denied'
-            ? "Access was denied. Please grant permission to continue."
-            : "Gmail connection failed. Please try again.";
-            
-          toast({
-            title: event.data.error === 'deleted_client' ? "Configuration Error" : "Connection Failed",
-            description: errorMessage,
-            variant: "destructive"
-          });
-          popup?.close();
-          window.removeEventListener('message', handleCallback);
-        }
-      };
+        };
 
-      window.addEventListener('message', handleCallback);
+        window.addEventListener('message', handleCallback);
 
-      // Check if popup was closed manually
-      const checkClosed = setInterval(() => {
-        if (popup?.closed) {
-          clearInterval(checkClosed);
-          window.removeEventListener('message', handleCallback);
-          setIsConnecting(false);
-        }
-      }, 1000);
+        // Check if popup was closed manually
+        const checkClosed = setInterval(() => {
+          if (popup?.closed) {
+            clearInterval(checkClosed);
+            window.removeEventListener('message', handleCallback);
+            setIsConnecting(false);
+          }
+        }, 1000);
+
+      } catch (popupError) {
+        // Popup failed, use redirect method
+        console.log('Popup failed, using redirect method:', popupError);
+        
+        toast({
+          title: "Redirecting to Google",
+          description: "You'll be redirected to Google for authentication.",
+        });
+        
+        // Store current page to return to after auth
+        localStorage.setItem('gmail_auth_return_url', window.location.pathname);
+        
+        // Redirect to Google OAuth
+        window.location.href = authUrl;
+        return;
+      }
 
     } catch (error) {
       console.error('Error initiating OAuth:', error);

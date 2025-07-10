@@ -279,10 +279,17 @@ export const EmailSettings = () => {
                       <ol className="text-gray-300 text-sm space-y-2 list-decimal list-inside">
                         <li>Go to Google Cloud Console → APIs & Services → Credentials</li>
                         <li>Create OAuth 2.0 Client ID (Web application)</li>
-                        <li>Add <code className="bg-white/10 px-1 rounded">http://localhost:5173</code> to authorized origins</li>
+                        <li>Add <code className="bg-white/10 px-1 rounded">http://localhost:5173</code> to authorized JavaScript origins (check spelling carefully!)</li>
                         <li>Add <code className="bg-white/10 px-1 rounded">http://localhost:5173/auth/callback</code> to redirect URIs</li>
                         <li>Copy Client ID and Secret below</li>
                       </ol>
+                      
+                      <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded">
+                        <p className="text-red-300 text-xs">
+                          <strong>⚠️ Common Error:</strong> Make sure you type <code className="bg-white/10 px-1 rounded">http://localhost:5173</code> correctly in Google Cloud Console. 
+                          The error "JavaScript origins: ttp://localhost:5173" means you're missing the "h" in "http".
+                        </p>
+                      </div>
                     </div>
 
                     <div className="space-y-4">

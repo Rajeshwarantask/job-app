@@ -195,9 +195,22 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
             } catch (error) {
               console.error('Error during OAuth callback:', error);
               const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+              
+              // Handle specific OAuth errors
+              let title = "Connection Failed";
+              let description = errorMessage;
+              
+              if (errorMessage.includes('deleted_client') || errorMessage.includes('invalid_client')) {
+                title = "OAuth Configuration Error";
+                description = "Your Google OAuth client has been deleted or is invalid. Please recreate your OAuth credentials in Google Cloud Console and update them in the settings.";
+              } else if (errorMessage.includes('invalid_grant')) {
+                title = "Authorization Expired";
+                description = "The authorization code has expired. Please try connecting again.";
+              }
+              
               toast({
-                title: "Connection Failed",
-                description: errorMessage,
+                title,
+                description,
                 variant: "destructive"
               });
             }

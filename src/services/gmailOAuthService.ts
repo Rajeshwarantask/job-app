@@ -102,7 +102,10 @@ class GmailOAuthService {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         if (errorData.error === 'invalid_client') {
-          throw new Error('OAuth client configuration is invalid. Please check your Google Cloud Console settings.');
+          throw new Error('OAuth client has been deleted or is invalid. Please recreate your OAuth credentials in Google Cloud Console.');
+        }
+        if (errorData.error === 'deleted_client') {
+          throw new Error('OAuth client has been deleted. Please recreate your OAuth credentials in Google Cloud Console.');
         }
         throw new Error(`Token exchange failed: ${errorData.error_description || response.statusText}`);
       }

@@ -140,10 +140,14 @@ export const EmailCredentialsSetup = ({ onCredentialsSet, isConnected }: EmailCr
               <li>Add http://localhost:5173/auth/callback to authorized redirect URIs</li>
               <li>Copy the Client ID and Secret below</li>
             </ol>
-            <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded">
+            <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded">
+              <p className="text-red-300 text-xs">
+                <strong>⚠️ Common Error:</strong> If you see "deleted_client" error, your OAuth credentials have been deleted in Google Cloud Console. You must recreate them following the steps above.
+              </p>
+            </div>
+            <div className="mt-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded">
               <p className="text-yellow-300 text-xs">
-                <strong>Important:</strong> Make sure your OAuth client is not deleted in Google Cloud Console. 
-                If you see "deleted_client\" errors, recreate your OAuth credentials.
+                <strong>Important:</strong> Keep your OAuth client active in Google Cloud Console. Never delete the OAuth client while the app is in use.
               </p>
             </div>
           </div>

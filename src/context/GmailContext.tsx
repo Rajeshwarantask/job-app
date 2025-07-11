@@ -103,7 +103,7 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
     try {
       const credentialsWithRedirect = {
         ...credentials,
-        redirectUri: `${window.location.origin}/auth/callback`
+        redirectUri: 'http://localhost:5173/auth/callback'
       };
 
       localStorage.setItem(`gmail_credentials_${user.id}`, JSON.stringify(credentialsWithRedirect));

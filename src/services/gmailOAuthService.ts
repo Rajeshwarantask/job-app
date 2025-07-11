@@ -55,7 +55,7 @@ class GmailOAuthService {
   setCredentials(credentials: GmailCredentials) {
     this.credentials = {
       ...credentials,
-      redirectUri: credentials.redirectUri || `${window.location.origin}/auth/callback`
+      redirectUri: `${window.location.origin}/auth/callback`
     };
   }
 

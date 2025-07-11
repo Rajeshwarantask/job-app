@@ -18,6 +18,7 @@ export const Header = ({ onAddJob }: HeaderProps) => {
   const hamburgerMenuItems = [
     { icon: Plus, label: "Add Job", action: onAddJob },
     { icon: TrendingUp, label: "Analytics", action: () => navigate("/analytics") },
+    { icon: Mail, label: "Gmail Inbox", action: () => navigate("/inbox") },
     { icon: Users, label: "Network", action: () => console.log("Network clicked") },
     { icon: Mail, label: "Email Settings", action: () => navigate("/email-settings") },
     { icon: Clock, label: "View Timeline", action: () => console.log("Timeline clicked") },

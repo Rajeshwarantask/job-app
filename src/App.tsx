@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import EmailSettings from "./pages/EmailSettings";
 import JobDetail from "./pages/JobDetail";
 import Analytics from "./pages/Analytics";
+import InboxPage from "./pages/InboxPage";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,13 @@ const App = () => (
                   <JobsProvider>
                     <AnalyticsRoute />
                   </JobsProvider>
+                </GmailProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="/inbox" element={
+              <ProtectedRoute>
+                <GmailProvider>
+                  <InboxPage />
                 </GmailProvider>
               </ProtectedRoute>
             } />

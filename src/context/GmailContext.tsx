@@ -1,7 +1,19 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { gmailOAuthService, GmailCredentials, ProcessedEmail } from '@/services/gmailOAuthService';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useCallback,
+} from 'react';
+import {
+  gmailOAuthService,
+  GmailCredentials,
+  ProcessedEmail,
+} from '@/services/gmailOAuthService';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom'; 
 
 interface GmailContextType {
   hasCredentials: boolean;
@@ -26,330 +38,269 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [processedEmails, setProcessedEmails] = useState<ProcessedEmail[]>([]);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-      checkStoredCredentials();
-      checkGmailConnection();
-      loadProcessedEmails();
-    }
+    if (user) restoreSession();
   }, [user]);
 
-  const checkStoredCredentials = () => {
+  // Unified restoration logic
+  const restoreSession = () => {
     try {
-      const stored = localStorage.getItem(`gmail_credentials_${user?.id}`);
-      if (stored) {
-        const credentials = JSON.parse(stored);
-        gmailOAuthService.setCredentials(credentials);
-        setHasCredentials(true);
-      }
-    } catch (error) {
-      console.error('Error checking stored credentials:', error);
-    }
-  };
-
-  const checkGmailConnection = () => {
-    try {
+      const credentials = localStorage.getItem(`gmail_credentials_${user?.id}`);
       const tokens = localStorage.getItem(`gmail_tokens_${user?.id}`);
       const connected = localStorage.getItem(`gmail_connected_${user?.id}`);
       const email = localStorage.getItem(`gmail_user_email_${user?.id}`);
-      
+      const lastSyncStr = localStorage.getItem(`gmail_last_sync_${user?.id}`);
+      const storedEmails = localStorage.getItem(`gmail_processed_emails_${user?.id}`);
+
+      if (credentials) {
+        gmailOAuthService.setCredentials(JSON.parse(credentials));
+        setHasCredentials(true);
+      }
+
       if (tokens && connected === 'true') {
-        const parsedTokens = JSON.parse(tokens);
-        gmailOAuthService.setTokens(parsedTokens);
+        gmailOAuthService.setTokens(JSON.parse(tokens));
         setIsConnected(true);
         setUserEmail(email);
-        
-        const lastSyncStr = localStorage.getItem(`gmail_last_sync_${user?.id}`);
-        if (lastSyncStr) {
-          setLastSync(new Date(lastSyncStr));
-        }
+        if (lastSyncStr) setLastSync(new Date(lastSyncStr));
       }
-    } catch (error) {
-      console.error('Error checking Gmail connection:', error);
-      setIsConnected(false);
-    }
-  };
 
-  const loadProcessedEmails = () => {
-    try {
-      const stored = localStorage.getItem(`gmail_processed_emails_${user?.id}`);
-      if (stored) {
-        const emails = JSON.parse(stored).map((email: any) => ({
+      if (storedEmails) {
+        const emails = JSON.parse(storedEmails).map((email: any) => ({
           ...email,
-          date: new Date(email.date)
+          date: new Date(email.date),
         }));
         setProcessedEmails(emails);
       }
     } catch (error) {
-      console.error('Error loading processed emails:', error);
+      console.error('Session restoration error:', error);
     }
   };
 
   const saveProcessedEmails = (emails: ProcessedEmail[]) => {
     try {
-      localStorage.setItem(`gmail_processed_emails_${user?.id}`, JSON.stringify(emails));
+      localStorage.setItem(
+        `gmail_processed_emails_${user?.id}`,
+        JSON.stringify(emails)
+      );
       setProcessedEmails(emails);
     } catch (error) {
       console.error('Error saving processed emails:', error);
     }
   };
 
-  const setCredentials = (credentials: GmailCredentials) => {
-    if (!user) return;
+  const setCredentials = useCallback(
+    (credentials: GmailCredentials) => {
+      if (!user) return;
 
-    try {
-      const credentialsWithRedirect = {
-        ...credentials,
-        redirectUri: 'http://localhost:5173/auth/callback'
-      };
+      try {
+        const credentialsWithRedirect = {
+          ...credentials,
+          redirectUri: 'http://localhost:5173/auth/callback',
+        };
 
-      localStorage.setItem(`gmail_credentials_${user.id}`, JSON.stringify(credentialsWithRedirect));
-      gmailOAuthService.setCredentials(credentialsWithRedirect);
-      setHasCredentials(true);
+        localStorage.setItem(
+          `gmail_credentials_${user.id}`,
+          JSON.stringify(credentialsWithRedirect)
+        );
+        gmailOAuthService.setCredentials(credentialsWithRedirect);
+        setHasCredentials(true);
 
-      toast({
-        title: "Credentials Saved",
-        description: "Google OAuth credentials have been configured successfully.",
-      });
-    } catch (error) {
-      console.error('Error saving credentials:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save credentials. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
+        toast({
+          title: 'Credentials Saved',
+          description: 'Google OAuth credentials have been configured successfully.',
+        });
+      } catch (error) {
+        console.error('Error saving credentials:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to save credentials. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    },
+    [user, toast]
+  );
 
-  const connectGmail = async () => {
+  const connectGmail = useCallback(async () => {
     if (!user || !hasCredentials) {
       toast({
-        title: "Configuration Required",
-        description: "Please set up your OAuth credentials first.",
-        variant: "destructive"
+        title: 'Configuration Required',
+        description: 'Please set up your OAuth credentials first.',
+        variant: 'destructive',
       });
       return;
     }
 
     setIsConnecting(true);
+
     try {
-      // Get authorization URL and redirect user
       const authUrl = gmailOAuthService.getAuthUrl();
-      
-      // Try popup first, fallback to redirect if blocked
-      try {
-        const popup = window.open(
-          authUrl,
-          'gmail-oauth',
-          'width=500,height=600,scrollbars=yes,resizable=yes'
-        );
+      const popup = window.open(
+        authUrl,
+        'gmail-oauth',
+        'width=500,height=600,scrollbars=yes,resizable=yes'
+      );
 
-        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-          // Popup was blocked, use redirect method instead
-          toast({
-            title: "Redirecting to Google",
-            description: "You'll be redirected to Google for authentication.",
-          });
-          
-          // Store current page to return to after auth
-          localStorage.setItem('gmail_auth_return_url', window.location.pathname);
-          
-          // Redirect to Google OAuth
-          window.location.href = authUrl;
-          return;
-        }
-
-        // Listen for the OAuth callback
-        const handleCallback = async (event: MessageEvent) => {
-          if (event.origin !== window.location.origin) return;
-          
-          if (event.data.type === 'GMAIL_OAUTH_SUCCESS') {
-            const { code } = event.data;
-            
-            try {
-              // Exchange code for tokens
-              const tokens = await gmailOAuthService.exchangeCodeForTokens(code);
-              
-              // Get user info
-              const userInfo = await gmailOAuthService.getUserInfo();
-              
-              // Store tokens and user info
-              localStorage.setItem(`gmail_tokens_${user.id}`, JSON.stringify(tokens));
-              localStorage.setItem(`gmail_connected_${user.id}`, 'true');
-              localStorage.setItem(`gmail_user_email_${user.id}`, userInfo.email);
-              
-              setIsConnected(true);
-              setUserEmail(userInfo.email);
-              
-              toast({
-                title: "Gmail Connected!",
-                description: `Successfully connected ${userInfo.email}`,
-              });
-
-              // Perform initial sync
-              await syncEmails();
-              
-            } catch (error) {
-              console.error('Error during OAuth callback:', error);
-              const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-              
-              // Handle specific OAuth errors
-              let title = "Connection Failed";
-              let description = errorMessage;
-              
-              if (errorMessage.includes('deleted_client') || errorMessage.includes('invalid_client')) {
-                title = "OAuth Configuration Error";
-                description = "Your Google OAuth client has been deleted or is invalid. Please recreate your OAuth credentials in Google Cloud Console and update them in the settings.";
-              } else if (errorMessage.includes('invalid_grant')) {
-                title = "Authorization Expired";
-                description = "The authorization code has expired. Please try connecting again.";
-              }
-              
-              toast({
-                title,
-                description,
-                variant: "destructive"
-              });
-            }
-            
-            popup?.close();
-            window.removeEventListener('message', handleCallback);
-          } else if (event.data.type === 'GMAIL_OAUTH_ERROR') {
-            const errorMessage = event.data.error === 'deleted_client' 
-              ? "OAuth client has been deleted. Please reconfigure your Google Cloud Console settings."
-              : event.data.error === 'access_denied'
-              ? "Access was denied. Please grant permission to continue."
-              : "Gmail connection failed. Please try again.";
-              
-            toast({
-              title: event.data.error === 'deleted_client' ? "Configuration Error" : "Connection Failed",
-              description: errorMessage,
-              variant: "destructive"
-            });
-            popup?.close();
-            window.removeEventListener('message', handleCallback);
-          }
-        };
-
-        window.addEventListener('message', handleCallback);
-
-        // Check if popup was closed manually
-        const checkClosed = setInterval(() => {
-          if (popup?.closed) {
-            clearInterval(checkClosed);
-            window.removeEventListener('message', handleCallback);
-            setIsConnecting(false);
-          }
-        }, 1000);
-
-      } catch (popupError) {
-        // Popup failed, use redirect method
-        console.log('Popup failed, using redirect method:', popupError);
-        
-        toast({
-          title: "Redirecting to Google",
-          description: "You'll be redirected to Google for authentication.",
-        });
-        
-        // Store current page to return to after auth
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
         localStorage.setItem('gmail_auth_return_url', window.location.pathname);
-        
-        // Redirect to Google OAuth
         window.location.href = authUrl;
         return;
       }
 
+      const handleCallback = async (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        clearTimeout(timeout);
+
+        if (event.data.type === 'GMAIL_OAUTH_SUCCESS') {
+          try {
+            const { code } = event.data;
+            const tokens = await gmailOAuthService.exchangeCodeForTokens(code);
+            const userInfo = await gmailOAuthService.getUserInfo();
+
+            localStorage.setItem(`gmail_tokens_${user.id}`, JSON.stringify(tokens));
+            localStorage.setItem(`gmail_connected_${user.id}`, 'true');
+            localStorage.setItem(`gmail_user_email_${user.id}`, userInfo.email);
+
+            setIsConnected(true);
+            setUserEmail(userInfo.email);
+
+            toast({
+              title: 'Gmail Connected!',
+              description: `Successfully connected ${userInfo.email}`,
+            });
+
+            await syncEmails();
+            navigate('/inbox');
+          } catch (error) {
+            handleOAuthError(error);
+          }
+
+          popup?.close();
+          window.removeEventListener('message', handleCallback);
+        } else if (event.data.type === 'GMAIL_OAUTH_ERROR') {
+          handleOAuthError(event.data.error);
+          popup?.close();
+          window.removeEventListener('message', handleCallback);
+        }
+      };
+      
+      window.addEventListener('message', handleCallback);
+
+      const timeout = setTimeout(() => {
+        toast({
+          title: 'OAuth Timeout',
+          description: 'Google sign-in took too long. Please try again.',
+          variant: 'destructive',
+        });
+        popup?.close();
+        window.removeEventListener('message', handleCallback);
+        setIsConnecting(false);
+      }, 2 * 60 * 1000);
     } catch (error) {
-      console.error('Error initiating OAuth:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast({
-        title: "Connection Failed",
-        description: errorMessage,
-        variant: "destructive"
-      });
+      handleOAuthError(error);
     } finally {
       setIsConnecting(false);
     }
+  }, [user, hasCredentials, toast]);
+
+  const handleOAuthError = (error: any) => {
+    const message = error instanceof Error ? error.message : String(error);
+
+    let title = 'Connection Failed';
+    let description = message;
+
+    if (message.includes('deleted_client') || message.includes('invalid_client')) {
+      title = 'OAuth Configuration Error';
+      description =
+        'Your Google OAuth client has been deleted or is invalid. Please recreate your OAuth credentials.';
+    } else if (message.includes('invalid_grant')) {
+      title = 'Authorization Expired';
+      description = 'The authorization code has expired. Please try connecting again.';
+    }
+
+    toast({ title, description, variant: 'destructive' });
   };
 
-  const disconnectGmail = async () => {
+  const disconnectGmail = useCallback(async () => {
     if (!user) return;
 
     try {
       await gmailOAuthService.revokeAccess();
-      
-      // Clear stored data
-      localStorage.removeItem(`gmail_credentials_${user.id}`);
-      localStorage.removeItem(`gmail_tokens_${user.id}`);
-      localStorage.removeItem(`gmail_connected_${user.id}`);
-      localStorage.removeItem(`gmail_user_email_${user.id}`);
-      localStorage.removeItem(`gmail_last_sync_${user.id}`);
-      localStorage.removeItem(`gmail_processed_emails_${user.id}`);
-      
+
+      [
+        'gmail_credentials_',
+        'gmail_tokens_',
+        'gmail_connected_',
+        'gmail_user_email_',
+        'gmail_last_sync_',
+        'gmail_processed_emails_',
+      ].forEach((key) => localStorage.removeItem(`${key}${user.id}`));
+
       setIsConnected(false);
       setUserEmail(null);
       setLastSync(null);
       setProcessedEmails([]);
 
       toast({
-        title: "Gmail Disconnected",
-        description: "Your Gmail account has been disconnected from JobTrail.",
+        title: 'Gmail Disconnected',
+        description: 'Your Gmail account has been disconnected from JobTrail.',
       });
-
     } catch (error) {
       console.error('Error disconnecting Gmail:', error);
       toast({
-        title: "Disconnection Failed",
-        description: "Unable to disconnect Gmail. Please try again.",
-        variant: "destructive"
+        title: 'Disconnection Failed',
+        description: 'Unable to disconnect Gmail. Please try again.',
+        variant: 'destructive',
       });
     }
-  };
+  }, [user, toast]);
 
-  const syncEmails = async () => {
+  const syncEmails = useCallback(async () => {
     if (!user || !isConnected) return;
 
     try {
       const emails = await gmailOAuthService.fetchEmails(50);
-      
       const currentTime = new Date();
+
       saveProcessedEmails(emails);
       setLastSync(currentTime);
-      localStorage.setItem(`gmail_last_sync_${user.id}`, currentTime.toISOString());
+      localStorage.setItem(
+        `gmail_last_sync_${user.id}`,
+        currentTime.toISOString()
+      );
 
       toast({
-        title: "Emails Synced",
+        title: 'Emails Synced',
         description: `Found ${emails.length} job-related emails.`,
       });
     } catch (error) {
-      console.error('Error syncing emails:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      // Handle authentication errors
-      if (errorMessage.includes('Authentication expired')) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      if (message.includes('Authentication expired')) {
         setIsConnected(false);
         localStorage.setItem(`gmail_connected_${user.id}`, 'false');
         toast({
-          title: "Authentication Expired",
-          description: "Please reconnect your Gmail account.",
-          variant: "destructive"
+          title: 'Authentication Expired',
+          description: 'Please reconnect your Gmail account.',
+          variant: 'destructive',
         });
       } else {
         toast({
-          title: "Sync Failed",
-          description: errorMessage,
-          variant: "destructive"
+          title: 'Sync Failed',
+          description: message,
+          variant: 'destructive',
         });
       }
     }
-  };
+  }, [user, isConnected, toast]);
 
-  const getConnectionStatus = () => isConnected;
+  const getConnectionStatus = useCallback(() => isConnected, [isConnected]);
 
-  const value = {
+  const value: GmailContextType = {
     hasCredentials,
     isConnected,
     isConnecting,
@@ -360,14 +311,10 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
     connectGmail,
     disconnectGmail,
     syncEmails,
-    getConnectionStatus
+    getConnectionStatus,
   };
 
-  return (
-    <GmailContext.Provider value={value}>
-      {children}
-    </GmailContext.Provider>
-  );
+  return <GmailContext.Provider value={value}>{children}</GmailContext.Provider>;
 };
 
 export const useGmail = () => {

@@ -8,15 +8,16 @@ import { AuthProvider } from "@/context/AuthContext";
 import { JobsProvider } from "@/context/JobsContext";
 import { GmailProvider } from "@/context/GmailContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AuthCallback } from './pages/AuthCallback';
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
-import NotFound from "./pages/NotFound";
 import EmailSettings from "./pages/EmailSettings";
 import JobDetail from "./pages/JobDetail";
 import Analytics from "./pages/Analytics";
 import InboxPage from "./pages/InboxPage";
+
 
 const queryClient = new QueryClient();
 
@@ -78,8 +79,6 @@ const App = () => (
               </ProtectedRoute>
             } />
             
-            {/* Catch all route */}
-            <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>

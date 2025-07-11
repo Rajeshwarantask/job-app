@@ -279,17 +279,15 @@ export const EmailSettings = () => {
                       <ol className="text-gray-300 text-sm space-y-2 list-decimal list-inside">
                         <li>Go to Google Cloud Console → APIs & Services → Credentials</li>
                         <li>Create OAuth 2.0 Client ID (Web application)</li>
-                        <li>Add <code className="bg-white/10 px-1 rounded">http://localhost:5173</code> to authorized JavaScript origins</li>
-                        <li>Add <code className="bg-white/10 px-1 rounded">http://localhost:5173/auth/callback</code> to authorized redirect URIs</li>
+                        <li>Add <code className="bg-white/10 px-1 rounded">http://localhost:5173</code> to authorized JavaScript origins (check spelling carefully!)</li>
+                        <li>Add <code className="bg-white/10 px-1 rounded">http://localhost:5173/auth/callback</code> to redirect URIs</li>
                         <li>Copy Client ID and Secret below</li>
                       </ol>
                       
-                      <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded">
+                      <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded">
                         <p className="text-red-300 text-xs">
-                          <strong>⚠️ Common Errors:</strong>
-                          <br />• Missing "h" in "http" → Use <code className="bg-white/10 px-1 rounded">http://localhost:5173</code>
-                          <br />• Wrong redirect URI → Must be exactly <code className="bg-white/10 px-1 rounded">http://localhost:5173/auth/callback</code>
-                          <br />• Using https instead of http for localhost
+                          <strong>⚠️ Common Error:</strong> Make sure you type <code className="bg-white/10 px-1 rounded">http://localhost:5173</code> correctly in Google Cloud Console. 
+                          The error "JavaScript origins: ttp://localhost:5173\" means you're missing the \"h" in "http".
                         </p>
                       </div>
                     </div>

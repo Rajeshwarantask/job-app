@@ -146,18 +146,21 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
       );
 
       if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-        localStorage.setItem('gmail_auth_return_url', window.location.pathname);
+        localStorage.setItem('gmail_auth_return_url', '/inbox');
         window.location.href = authUrl;
         return;
       }
 
       const handleCallback = async (event: MessageEvent) => {
         if (event.origin !== window.location.origin) return;
+        
+        console.log('Received OAuth callback:', event.data);
         clearTimeout(timeout);
 
         if (event.data.type === 'GMAIL_OAUTH_SUCCESS') {
           try {
             const { code } = event.data;
+            console.log('Processing OAuth code...');
             const tokens = await gmailOAuthService.exchangeCodeForTokens(code);
             const userInfo = await gmailOAuthService.getUserInfo();
 
@@ -173,15 +176,21 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
               description: `Successfully connected ${userInfo.email}`,
             });
 
+            // Close popup first
+            popup?.close();
+            window.removeEventListener('message', handleCallback);
+            
+            // Sync emails and navigate to inbox
             await syncEmails();
             navigate('/inbox');
           } catch (error) {
+            console.error('OAuth processing error:', error);
             handleOAuthError(error);
+            popup?.close();
+            window.removeEventListener('message', handleCallback);
           }
-
-          popup?.close();
-          window.removeEventListener('message', handleCallback);
         } else if (event.data.type === 'GMAIL_OAUTH_ERROR') {
+          console.error('OAuth error:', event.data.error);
           handleOAuthError(event.data.error);
           popup?.close();
           window.removeEventListener('message', handleCallback);
@@ -191,6 +200,7 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
       window.addEventListener('message', handleCallback);
 
       const timeout = setTimeout(() => {
+        console.log('OAuth timeout');
         toast({
           title: 'OAuth Timeout',
           description: 'Google sign-in took too long. Please try again.',
@@ -201,6 +211,7 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
         setIsConnecting(false);
       }, 2 * 60 * 1000);
     } catch (error) {
+      console.error('OAuth initiation error:', error);
       handleOAuthError(error);
     } finally {
       setIsConnecting(false);

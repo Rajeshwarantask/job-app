@@ -24,6 +24,29 @@ export const InboxViewer = () => {
     if (isAuthenticated()) {
       fetchMessages(maxResults[0]);
     }
+    
+    // Handle OAuth callback from redirect flow
+    const handleOAuthResult = () => {
+      const oauthResult = localStorage.getItem('gmail_oauth_result');
+      if (oauthResult) {
+        try {
+          const result = JSON.parse(oauthResult);
+          localStorage.removeItem('gmail_oauth_result');
+          
+          if (result.type === 'GMAIL_OAUTH_SUCCESS') {
+            // The GmailContext should handle this automatically
+            console.log('OAuth success detected, refreshing...');
+            window.location.reload();
+          } else if (result.type === 'GMAIL_OAUTH_ERROR') {
+            console.error('OAuth error detected:', result.error);
+          }
+        } catch (error) {
+          console.error('Error parsing OAuth result:', error);
+        }
+      }
+    };
+    
+    handleOAuthResult();
   }, []);
 
   const handleSliderChange = async (value: number[]) => {

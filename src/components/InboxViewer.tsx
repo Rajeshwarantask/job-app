@@ -138,6 +138,14 @@ export const InboxViewer = () => {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate('/')}
+                  className="text-gray-300 hover:text-white hover:bg-white/10"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Dashboard
+                </Button>
                 <div className="flex items-center space-x-2">
                   <Inbox className="h-8 w-8 text-blue-400" />
                   <h1 className="text-2xl font-bold text-white">Gmail Inbox Viewer</h1>

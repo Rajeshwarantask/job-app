@@ -84,33 +84,58 @@ class GmailOAuthService {
       throw new Error('Credentials not set');
     }
 
+    console.log('Exchanging code for tokens...', {
+      clientId: this.credentials.clientId.substring(0, 20) + '...',
+      redirectUri: this.credentials.redirectUri,
+      codeLength: code.length
+    });
+
     try {
+      const tokenRequestBody = {
+        client_id: this.credentials.clientId,
+        client_secret: this.credentials.clientSecret,
+        code: code,
+        grant_type: 'authorization_code',
+        redirect_uri: this.credentials.redirectUri,
+      };
+
+      console.log('Token request body:', {
+        ...tokenRequestBody,
+        client_secret: '***hidden***',
+        code: code.substring(0, 10) + '...'
+      });
+
       const response = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({
-          client_id: this.credentials.clientId,
-          client_secret: this.credentials.clientSecret,
-          code: code,
-          grant_type: 'authorization_code',
-          redirect_uri: this.credentials.redirectUri,
-        }),
+        body: new URLSearchParams(tokenRequestBody),
       });
+
+      console.log('Token exchange response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error('Token exchange error:', errorData);
+        
         if (errorData.error === 'invalid_client') {
           throw new Error('OAuth client has been deleted or is invalid. Please recreate your OAuth credentials in Google Cloud Console.');
         }
         if (errorData.error === 'deleted_client') {
           throw new Error('OAuth client has been deleted. Please recreate your OAuth credentials in Google Cloud Console.');
         }
-        throw new Error(`Token exchange failed: ${errorData.error_description || response.statusText}`);
+        if (errorData.error === 'invalid_grant') {
+          throw new Error('Authorization code is invalid or expired. Please try signing in again.');
+        }
+        if (errorData.error === 'redirect_uri_mismatch') {
+          throw new Error('Redirect URI mismatch. Please ensure your Google Cloud Console has the correct redirect URI: ' + this.credentials.redirectUri);
+        }
+        throw new Error(`Token exchange failed: ${errorData.error_description || errorData.error || response.statusText}`);
       }
 
       const tokens = await response.json();
+      console.log('Token exchange successful');
       this.tokens = tokens;
       return tokens;
     } catch (error) {

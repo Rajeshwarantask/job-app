@@ -286,8 +286,10 @@ export const EmailSettings = () => {
                       
                       <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded">
                         <p className="text-red-300 text-xs">
-                          <strong>⚠️ Common Error:</strong> Make sure you type <code className="bg-white/10 px-1 rounded">http://localhost:5173</code> correctly in Google Cloud Console. 
-                          The error "JavaScript origins: ttp://localhost:5173\" means you're missing the \"h" in "http".
+                          <strong>⚠️ Common Errors:</strong> 
+                          <br />• Make sure redirect URI is exactly: <code className="bg-white/10 px-1 rounded">http://localhost:5173/auth-callback.html</code>
+                          <br />• JavaScript origins should be: <code className="bg-white/10 px-1 rounded">http://localhost:5173</code> (no trailing slash)
+                          <br />• Use "http" not "https" for localhost development
                         </p>
                       </div>
                     </div>

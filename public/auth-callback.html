@@ -97,6 +97,7 @@
             
             // Send success to parent window
             if (window.opener) {
+                console.log('Sending OAuth success to parent window with code:', code.substring(0, 10) + '...');
                 window.opener.postMessage({
                     type: 'GMAIL_OAUTH_SUCCESS',
                     code: code,

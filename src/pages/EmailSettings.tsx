@@ -279,8 +279,8 @@ export const EmailSettings = () => {
                       <ol className="text-gray-300 text-sm space-y-2 list-decimal list-inside">
                         <li>Go to Google Cloud Console → APIs & Services → Credentials</li>
                         <li>Create OAuth 2.0 Client ID (Web application)</li>
-                        <li>Add <code className="bg-white/10 px-1 rounded">http://localhost:5173</code> to authorized JavaScript origins (check spelling carefully!)</li>
-                        <li>Add <code className="bg-white/10 px-1 rounded">http://localhost:5173/auth/callback</code> to redirect URIs</li>
+                        <li>Add <code className="bg-white/10 px-1 rounded">http://localhost:5173</code> to authorized JavaScript origins</li>
+                        <li>Add <code className="bg-white/10 px-1 rounded">http://localhost:5173/auth-callback.html</code> to redirect URIs</li>
                         <li>Copy Client ID and Secret below</li>
                       </ol>
                       

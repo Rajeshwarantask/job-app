@@ -1,7 +1,9 @@
-export const InboxViewer = ({ searchQuery, dateRange }) => {
-  const { emails } = useGmailApi(); // or your context logic
+import { useGmailApi } from '../hooks/useGmailApi';
 
-  const filteredEmails = emails.filter((email) => {
+export const InboxViewer = ({ searchQuery, dateRange }) => {
+  const { messages } = useGmailApi(); // or your context logic
+
+  const filteredEmails = messages.filter((email) => {
     const matchQuery =
       email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
       email.sender.toLowerCase().includes(searchQuery.toLowerCase());

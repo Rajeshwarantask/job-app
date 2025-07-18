@@ -140,12 +140,12 @@ export const EmailSettings = () => {
 
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-white mb-4">Email Integration</h1>
-            <p className="text-xl text-gray-300 max-w-2xl">
+            <p className="text-xl text-gray-300">
               Connect and manage your Gmail account to automatically track job applications.
             </p>
           </div>
 
-          <div className="max-w-4xl space-y-6">
+          <div className="space-y-6">
             {/* Connection Status Overview */}
             <Card className="bg-white/10 backdrop-blur-sm border-white/20">
               <CardHeader>
@@ -478,12 +478,14 @@ export const EmailSettings = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {processedEmails.slice(0, 5).map((email, index) => (
+                    {processedEmails.slice(0, 5).map((email) => (
                       <div key={email.id} className="bg-white/5 rounded-lg p-3 border border-white/10">
                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0">
                             <h4 className="text-white font-medium text-sm truncate">{email.subject}</h4>
-                            <p className="text-gray-400 text-xs">{email.company} • {email.date.toLocaleDateString()}</p>
+                            <p className="text-gray-400 text-xs">
+                              {email.company} • {email.date.toLocaleDateString()}
+                            </p>
                           </div>
                           {email.status && (
                             <Badge className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/30">
@@ -497,7 +499,12 @@ export const EmailSettings = () => {
                   
                   {processedEmails.length > 5 && (
                     <div className="mt-4 text-center">
-                      <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-400 hover:text-white"
+                        onClick={() => navigate("/inbox")} // Redirect to InboxViewer page
+                      >
                         View All Emails ({processedEmails.length})
                       </Button>
                     </div>

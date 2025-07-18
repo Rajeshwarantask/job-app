@@ -31,24 +31,6 @@ const InboxPage = () => {
           <Button variant="outline" onClick={() => navigate(-1)}>
             ← Back
           </Button>
-          <Input
-            type="text"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            placeholder="Search subject or sender..."
-            className="w-full md:w-72"
-          />
-        </div>
-
-        <div className="flex gap-2 items-center">
-          <DateRangePicker
-            date={dateRange}
-            onChange={setDateRange}
-            placeholder="Select date range"
-            icon={<Calendar className="h-4 w-4" />}
-            className="min-w-[220px]"
-          />
-          <Button onClick={handleFilter}>Filter</Button>
         </div>
       </div>
 

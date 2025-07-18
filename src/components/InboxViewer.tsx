@@ -245,6 +245,8 @@ export const InboxViewer = ({ searchQuery: externalSearchQuery, dateRange: exter
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700">
                       <SelectItem value="all">All senders</SelectItem>
+                      <SelectItem value="none">No selection</SelectItem>
+                      <SelectItem value="clear">Clear selection</SelectItem>
                       {uniqueSenders.slice(0, 20).map(sender => (
                         <SelectItem key={sender} value={sender}>
                           {sender.length > 30 ? sender.substring(0, 30) + '...' : sender}
@@ -262,6 +264,8 @@ export const InboxViewer = ({ searchQuery: externalSearchQuery, dateRange: exter
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700">
                       <SelectItem value="all">All companies</SelectItem>
+                      <SelectItem value="none">No selection</SelectItem>
+                      <SelectItem value="clear">Clear selection</SelectItem>
                       {uniqueCompanies.slice(0, 20).map(company => (
                         <SelectItem key={company} value={company}>
                           {company}
@@ -278,8 +282,10 @@ export const InboxViewer = ({ searchQuery: externalSearchQuery, dateRange: exter
                       <SelectValue placeholder="All keywords" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="">All keywords</SelectItem>
-                      {(filterMode === 'auto' ? autoKeywords : customKeywords).map(keyword => (
+                      <SelectItem value="all">All keywords</SelectItem>
+                      <SelectItem value="none">No selection</SelectItem>
+                      <SelectItem value="clear">Clear selection</SelectItem>
+                      {["application", "interview", "offer", "rejected"].map((keyword) => (
                         <SelectItem key={keyword} value={keyword}>
                           {keyword}
                         </SelectItem>

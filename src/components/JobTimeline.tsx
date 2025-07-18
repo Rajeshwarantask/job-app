@@ -1,4 +1,4 @@
-
+import { useState } from "react";
 import { Job } from "@/types/Job";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,8 @@ interface TimelineStage {
 }
 
 export const JobTimeline = ({ job }: JobTimelineProps) => {
-  // Generate timeline stages based on job status and data
+  const [currentStatus, setCurrentStatus] = useState<Job['status']>(job.status);
+
   const generateTimelineStages = (job: Job): TimelineStage[] => {
     const stages: TimelineStage[] = [
       {
@@ -43,17 +44,20 @@ export const JobTimeline = ({ job }: JobTimelineProps) => {
         id: 'shortlisting',
         title: 'Company Shortlisting',
         description: 'Shortlisting process',
-        status: job.status === 'applied' ? 'upcoming' : 
-               job.status === 'interview' || job.status === 'offer' ? 'completed' : 'current',
+        status:
+          job.status === 'applied' ? 'upcoming' :
+          job.status === 'interview' || job.status === 'offer' ? 'completed' :
+          'current',
         details: 'Candidate selection phase'
       },
       {
         id: 'test',
         title: 'Online Test',
         description: 'Assessment/Technical test',
-        status: job.testDate ? 'completed' : 
-               job.status === 'interview' || job.status === 'offer' ? 'completed' :
-               job.status === 'applied' ? 'upcoming' : 'current',
+        status:
+          job.testDate ? 'completed' :
+          job.status === 'interview' || job.status === 'offer' ? 'completed' :
+          job.status === 'applied' ? 'upcoming' : 'current',
         date: job.testDate,
         details: job.testDate ? 'Technical assessment completed' : 'Technical assessment pending'
       },
@@ -61,28 +65,32 @@ export const JobTimeline = ({ job }: JobTimelineProps) => {
         id: 'interview',
         title: 'Interview',
         description: 'Interview round',
-        status: job.status === 'interview' ? 'current' :
-               job.status === 'offer' ? 'completed' :
-               job.status === 'rejected' ? 'skipped' : 'upcoming',
+        status:
+          job.status === 'interview' ? 'current' :
+          job.status === 'offer' ? 'completed' :
+          job.status === 'rejected' ? 'skipped' : 'upcoming',
         date: job.interviewDate,
         details: job.interviewDate ? 'Interview scheduled' : 'Interview pending'
       },
       {
         id: 'decision',
-        title: job.status === 'offer' ? 'Offer Received' : 
-               job.status === 'rejected' ? 'Application Rejected' : 'Final Decision',
-        description: job.status === 'offer' ? 'Congratulations!' : 
-                    job.status === 'rejected' ? 'Better luck next time' : 'Awaiting decision',
+        title:
+          job.status === 'offer' ? 'Offer Received' :
+          job.status === 'rejected' ? 'Application Rejected' : 'Final Decision',
+        description:
+          job.status === 'offer' ? 'Congratulations!' :
+          job.status === 'rejected' ? 'Better luck next time' : 'Awaiting decision',
         status: job.status === 'offer' || job.status === 'rejected' ? 'completed' : 'upcoming',
-        details: job.status === 'offer' ? 'Job offer received' :
-                job.status === 'rejected' ? 'Application not selected' : 'Final decision pending'
+        details:
+          job.status === 'offer' ? 'Job offer received' :
+          job.status === 'rejected' ? 'Application not selected' : 'Final decision pending'
       }
     ];
 
     return stages;
   };
 
-  const timelineStages = generateTimelineStages(job);
+  const timelineStages = generateTimelineStages({ ...job, status: currentStatus });
 
   const getStageIcon = (status: TimelineStage['status']) => {
     switch (status) {
@@ -112,6 +120,7 @@ export const JobTimeline = ({ job }: JobTimelineProps) => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-semibold text-gray-800">Application Timeline</h3>
         <Badge className="bg-blue-100 text-blue-700 border-blue-200">
@@ -119,20 +128,36 @@ export const JobTimeline = ({ job }: JobTimelineProps) => {
         </Badge>
       </div>
 
+      {/* Manual Stage Selector */}
+      <div className="mb-4 flex items-center justify-between">
+        <h4 className="text-lg font-semibold text-gray-800">Mark Current Stage</h4>
+        <select
+          value={currentStatus}
+          onChange={(e) => setCurrentStatus(e.target.value as Job['status'])}
+          className="border rounded px-3 py-1 text-sm"
+        >
+          <option value="applied">Applied</option>
+          <option value="interview">Interview</option>
+          <option value="offer">Offer</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+
+      {/* Timeline */}
       <div className="relative">
         {timelineStages.map((stage, index) => (
           <div key={stage.id} className="relative flex items-start space-x-4 pb-8">
-            {/* Timeline line */}
+            {/* Vertical line between items */}
             {index < timelineStages.length - 1 && (
               <div className="absolute left-[10px] top-8 h-full w-0.5 bg-gray-200" />
             )}
-            
-            {/* Stage icon */}
+
+            {/* Icon */}
             <div className="flex-shrink-0 mt-1">
               {getStageIcon(stage.status)}
             </div>
 
-            {/* Stage content */}
+            {/* Stage card */}
             <Card className={`flex-1 ${getStageColor(stage.status)} border`}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
@@ -144,9 +169,9 @@ export const JobTimeline = ({ job }: JobTimelineProps) => {
                     </div>
                   )}
                 </div>
-                
+
                 <p className="text-gray-600 text-sm mb-2">{stage.description}</p>
-                
+
                 {stage.details && (
                   <p className="text-xs text-gray-500">{stage.details}</p>
                 )}

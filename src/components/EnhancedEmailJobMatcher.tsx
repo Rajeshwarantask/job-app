@@ -9,22 +9,7 @@ import { useJobs } from '@/context/JobsContext';
 import { intelligentEmailProcessor, IntelligentEmailMatch } from '@/services/intelligentEmailProcessor';
 import { nlpService, JobStage } from '@/services/nlpService';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Brain,
-  Mail, 
-  CheckCircle, 
-  Plus, 
-  RefreshCw, 
-  AlertTriangle,
-  ArrowRight,
-  X,
-  TrendingUp,
-  Target,
-  Lightbulb,
-  Zap,
-  Eye,
-  Timeline
-} from 'lucide-react';
+import { Brain, Mail, CheckCircle, Plus, RefreshCw, AlertTriangle, ArrowRight, X, TrendingUp, Target, Lightbulb, Zap, Eye, Baseline as Timeline } from 'lucide-react';
 
 export const EnhancedEmailJobMatcher = () => {
   const { processedEmails } = useGmail();

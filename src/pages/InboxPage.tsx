@@ -24,18 +24,26 @@ const InboxPage = () => {
   };
 
   return (
-    <div className="p-4 space-y-6">
-      {/* Top Controls */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate(-1)}>
-            ← Back
-          </Button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="min-h-screen bg-black/20 backdrop-blur-sm">
+        {/* Top Controls */}
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div className="flex gap-2">
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate(-1)}
+                className="text-white hover:bg-white/10 backdrop-blur-sm border border-white/20"
+              >
+                ← Back
+              </Button>
+            </div>
+          </div>
+
+          {/* Inbox Viewer */}
+          <InboxViewer searchQuery={searchQuery} dateRange={dateRange} />
         </div>
       </div>
-
-      {/* Inbox Viewer */}
-      <InboxViewer searchQuery={searchQuery} dateRange={dateRange} />
     </div>
   );
 };

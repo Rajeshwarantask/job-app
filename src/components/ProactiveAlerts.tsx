@@ -19,6 +19,7 @@ import {
   Mail,
   Zap
 } from 'lucide-react';
+import { ErrorBoundary } from 'react-error-boundary';
 
 interface ProactiveAlert {
   id: string;
@@ -31,6 +32,12 @@ interface ProactiveAlert {
   createdAt: Date;
   dismissed?: boolean;
 }
+
+const ErrorFallback = () => (
+  <div className="text-center text-red-500">
+    Something went wrong with alerts. Please try again later.
+  </div>
+);
 
 export const ProactiveAlerts = () => {
   const { jobs } = useJobs();
@@ -47,7 +54,7 @@ export const ProactiveAlerts = () => {
     // Build timelines for all jobs
     const timelines = jobs.map(job => 
       intelligentEmailProcessor.buildJobTimeline(job.id, processedEmails)
-    );
+    ).filter(timeline => timeline !== null); // Filter out null timelines
 
     // Generate proactive alerts
     const generatedAlerts = intelligentEmailProcessor.generateProactiveAlerts(timelines);
@@ -146,148 +153,150 @@ export const ProactiveAlerts = () => {
   }
 
   return (
-    <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-white flex items-center">
-            <Zap className="h-5 w-5 mr-2" />
-            Proactive Alerts
-            {activeAlerts.length > 0 && (
-              <Badge className="ml-2 bg-red-500/20 text-red-300">
-                {activeAlerts.length} active
-              </Badge>
-            )}
-          </CardTitle>
-          
-          <div className="flex space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowDismissed(!showDismissed)}
-              className="text-gray-400 hover:text-white"
-            >
-              {showDismissed ? 'Hide Dismissed' : `Show Dismissed (${dismissedAlerts.length})`}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={generateAlerts}
-              className="text-gray-400 hover:text-white"
-            >
-              <Bell className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-white flex items-center">
+              <Zap className="h-5 w-5 mr-2" />
+              Proactive Alerts
+              {activeAlerts.length > 0 && (
+                <Badge className="ml-2 bg-red-500/20 text-red-300">
+                  {activeAlerts.length} active
+                </Badge>
+              )}
+            </CardTitle>
+            
+            <div className="flex space-x-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDismissed(!showDismissed)}
+                className="text-gray-400 hover:text-white"
+              >
+                {showDismissed ? 'Hide Dismissed' : `Show Dismissed (${dismissedAlerts.length})`}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={generateAlerts}
+                className="text-gray-400 hover:text-white"
+              >
+                <Bell className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {/* Active Alerts */}
-          {activeAlerts.map((alert) => (
-            <Alert key={alert.id} className={getAlertColor(alert.urgency)}>
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-3 flex-1">
-                  {getAlertIcon(alert.type)}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <h4 className="font-medium text-white text-sm">
-                        {alert.jobTitle}
-                      </h4>
-                      {getUrgencyBadge(alert.urgency)}
-                    </div>
-                    <AlertDescription className="text-gray-300 text-sm">
-                      {alert.message}
-                    </AlertDescription>
-                    <div className="flex items-center space-x-4 mt-2 text-xs text-gray-400">
-                      <span className="flex items-center">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        {alert.createdAt.toLocaleDateString()}
-                      </span>
-                      <span className="capitalize">{alert.type.replace('_', ' ')}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex space-x-2 ml-4">
-                  {alert.actionable && (
-                    <Button
-                      size="sm"
-                      onClick={() => markAsActioned(alert.id)}
-                      className="bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30"
-                    >
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Done
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => dismissAlert(alert.id)}
-                    className="text-gray-400 hover:text-white p-1"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </Alert>
-          ))}
-
-          {/* Dismissed Alerts */}
-          {showDismissed && dismissedAlerts.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2 pt-4 border-t border-white/20">
-                <CheckCircle className="h-4 w-4 text-gray-400" />
-                <h4 className="text-gray-400 font-medium">Dismissed Alerts</h4>
-              </div>
-              
-              {dismissedAlerts.map((alert) => (
-                <div key={alert.id} className="bg-white/5 rounded-lg p-3 border border-white/10 opacity-60">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      {getAlertIcon(alert.type)}
-                      <div>
-                        <h5 className="text-white text-sm font-medium">{alert.jobTitle}</h5>
-                        <p className="text-gray-400 text-xs">{alert.message}</p>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Active Alerts */}
+            {activeAlerts.map((alert) => (
+              <Alert key={alert.id} className={getAlertColor(alert.urgency)}>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-3 flex-1">
+                    {getAlertIcon(alert.type)}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <h4 className="font-medium text-white text-sm">
+                          {alert.jobTitle}
+                        </h4>
+                        {getUrgencyBadge(alert.urgency)}
+                      </div>
+                      <AlertDescription className="text-gray-300 text-sm">
+                        {alert.message}
+                      </AlertDescription>
+                      <div className="flex items-center space-x-4 mt-2 text-xs text-gray-400">
+                        <span className="flex items-center">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {alert.createdAt.toLocaleDateString()}
+                        </span>
+                        <span className="capitalize">{alert.type.replace('_', ' ')}</span>
                       </div>
                     </div>
-                    <Badge className="bg-gray-500/20 text-gray-400 text-xs">
-                      Dismissed
-                    </Badge>
+                  </div>
+                  
+                  <div className="flex space-x-2 ml-4">
+                    {alert.actionable && (
+                      <Button
+                        size="sm"
+                        onClick={() => markAsActioned(alert.id)}
+                        className="bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30"
+                      >
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Done
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => dismissAlert(alert.id)}
+                      className="text-gray-400 hover:text-white p-1"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              </Alert>
+            ))}
 
-          {/* Alert Statistics */}
-          {alerts.length > 0 && (
-            <div className="mt-6 pt-4 border-t border-white/20">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div className="bg-white/5 rounded-lg p-3">
-                  <div className="text-lg font-bold text-white">{activeAlerts.length}</div>
-                  <div className="text-xs text-gray-400">Active</div>
+            {/* Dismissed Alerts */}
+            {showDismissed && dismissedAlerts.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2 pt-4 border-t border-white/20">
+                  <CheckCircle className="h-4 w-4 text-gray-400" />
+                  <h4 className="text-gray-400 font-medium">Dismissed Alerts</h4>
                 </div>
-                <div className="bg-white/5 rounded-lg p-3">
-                  <div className="text-lg font-bold text-red-300">
-                    {activeAlerts.filter(a => a.urgency === 'high').length}
+                
+                {dismissedAlerts.map((alert) => (
+                  <div key={alert.id} className="bg-white/5 rounded-lg p-3 border border-white/10 opacity-60">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        {getAlertIcon(alert.type)}
+                        <div>
+                          <h5 className="text-white text-sm font-medium">{alert.jobTitle}</h5>
+                          <p className="text-gray-400 text-xs">{alert.message}</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-gray-500/20 text-gray-400 text-xs">
+                        Dismissed
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-400">High Priority</div>
-                </div>
-                <div className="bg-white/5 rounded-lg p-3">
-                  <div className="text-lg font-bold text-green-300">
-                    {activeAlerts.filter(a => a.actionable).length}
+                ))}
+              </div>
+            )}
+
+            {/* Alert Statistics */}
+            {alerts.length > 0 && (
+              <div className="mt-6 pt-4 border-t border-white/20">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                  <div className="bg-white/5 rounded-lg p-3">
+                    <div className="text-lg font-bold text-white">{activeAlerts.length}</div>
+                    <div className="text-xs text-gray-400">Active</div>
                   </div>
-                  <div className="text-xs text-gray-400">Actionable</div>
-                </div>
-                <div className="bg-white/5 rounded-lg p-3">
-                  <div className="text-lg font-bold text-gray-300">{dismissedAlerts.length}</div>
-                  <div className="text-xs text-gray-400">Completed</div>
+                  <div className="bg-white/5 rounded-lg p-3">
+                    <div className="text-lg font-bold text-red-300">
+                      {activeAlerts.filter(a => a.urgency === 'high').length}
+                    </div>
+                    <div className="text-xs text-gray-400">High Priority</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-3">
+                    <div className="text-lg font-bold text-green-300">
+                      {activeAlerts.filter(a => a.actionable).length}
+                    </div>
+                    <div className="text-xs text-gray-400">Actionable</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-3">
+                    <div className="text-lg font-bold text-gray-300">{dismissedAlerts.length}</div>
+                    <div className="text-xs text-gray-400">Completed</div>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </ErrorBoundary>
   );
 };

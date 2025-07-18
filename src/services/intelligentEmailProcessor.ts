@@ -38,11 +38,11 @@ export interface JobTimeline {
 class IntelligentEmailProcessor {
   // Process emails with advanced NLP classification
   processEmailsIntelligently(emails: ProcessedEmail[], existingJobs: Job[]): IntelligentEmailMatch[] {
-    return emails.map(email => this.analyzeEmailIntelligently(email, existingJobs));
+    return emails.map(email => this.analyzeEmailIntelligently(email, existingJobs, emails));
   }
 
   // Analyze single email with full intelligence
-  private analyzeEmailIntelligently(email: ProcessedEmail, jobs: Job[]): IntelligentEmailMatch {
+  private analyzeEmailIntelligently(email: ProcessedEmail, jobs: Job[], allEmails: ProcessedEmail[]): IntelligentEmailMatch {
     // Classify email using NLP
     const classification = nlpService.classifyEmail(email.subject, email.fullContent || email.snippet);
     
@@ -55,7 +55,7 @@ class IntelligentEmailProcessor {
     
     if (matchResult.job) {
       // Get all emails for this job to build timeline confidence
-      const jobEmails = this.getJobEmails(matchResult.job.id, emails);
+      const jobEmails = this.getJobEmails(matchResult.job.id, allEmails);
       timelineConfidence = nlpService.generateTimelineConfidence(
         jobEmails.map(e => ({ 
           classification: nlpService.classifyEmail(e.subject, e.fullContent || e.snippet), 
@@ -322,10 +322,15 @@ class IntelligentEmailProcessor {
   }
 
   // Build intelligent job timeline
-  buildJobTimeline(jobId: string, emails: ProcessedEmail[]): JobTimeline {
+  buildJobTimeline(jobId: string, emails: ProcessedEmail[]): JobTimeline | null {
+    if (!emails || emails.length === 0) {
+      console.warn(`No emails found for jobId: ${jobId}`);
+      return null;
+    }
+
     const jobEmails = emails.filter(email => {
-      // This would use actual job-email associations
-      return true; // Placeholder
+      // Placeholder logic for filtering job-related emails
+      return true;
     });
 
     const stages = jobEmails.map(email => {
@@ -341,11 +346,11 @@ class IntelligentEmailProcessor {
     }).sort((a, b) => a.date.getTime() - b.date.getTime());
 
     const currentStage = stages.length > 0 ? stages[stages.length - 1].stage : 'application_submitted';
-    
+
     const confidence = nlpService.generateTimelineConfidence(
-      stages.map(s => ({ 
-        classification: { stage: s.stage, sentiment: s.sentiment, confidence: s.confidence } as EmailClassification, 
-        date: s.date 
+      stages.map(s => ({
+        classification: { stage: s.stage, sentiment: s.sentiment, confidence: s.confidence },
+        date: s.date
       })),
       currentStage
     );

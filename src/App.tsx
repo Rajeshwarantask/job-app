@@ -9,7 +9,6 @@ import { JobsProvider } from "@/context/JobsContext";
 import { GmailProvider } from "@/context/GmailContext";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { PWAUpdateNotification } from "@/components/PWAUpdateNotification";
-import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AuthCallback } from './pages/AuthCallback';
 import Index from "./pages/Index";
@@ -31,7 +30,6 @@ const App = () => (
       <Sonner />
       <PWAInstallPrompt />
       <PWAUpdateNotification />
-      <OfflineIndicator />
       <BrowserRouter>
         <AuthProvider>
           <Routes>

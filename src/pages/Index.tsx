@@ -2,8 +2,6 @@ import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Dashboard } from "@/components/Dashboard";
 import { JobForm } from "@/components/JobForm";
-import { EnhancedEmailJobMatcher } from "@/components/EnhancedEmailJobMatcher";
-import { ProactiveAlerts } from "@/components/ProactiveAlerts";
 import { Job } from "@/types/Job";
 
 export default function Index() {
@@ -16,7 +14,7 @@ export default function Index() {
       applicationDate: '2024-07-01',
       status: 'interview',
       notes: 'Great company culture, technical interview scheduled',
-      interviewDate: '2024-07-10'
+      interviewDate: '2024-07-10',
     },
     {
       id: '2',
@@ -25,7 +23,7 @@ export default function Index() {
       platform: 'Company Website',
       applicationDate: '2024-06-25',
       status: 'applied',
-      notes: 'Applied through career portal'
+      notes: 'Applied through career portal',
     },
     {
       id: '3',
@@ -72,8 +70,6 @@ export default function Index() {
       <div className="min-h-screen bg-black/20 backdrop-blur-sm">
         <Header onAddJob={handleAddJob} />
         <main className="container mx-auto px-4 py-6 space-y-6">
-          <ProactiveAlerts />
-          <EnhancedEmailJobMatcher />
           <Dashboard 
             jobs={jobs}
             onUpdateJobStatus={updateJobStatus}

@@ -1,4 +1,3 @@
-// Real Gmail OAuth2 service using Google APIs
 export interface GmailCredentials {
   clientId: string;
   clientSecret: string;
@@ -44,14 +43,12 @@ class GmailOAuthService {
   private credentials: GmailCredentials | null = null;
   private tokens: GmailTokens | null = null;
 
-  // Gmail API scopes
   private readonly SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',
     'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/userinfo.profile'
   ];
 
-  // Set OAuth credentials
   setCredentials(credentials: GmailCredentials) {
     this.credentials = {
       ...credentials,
@@ -59,7 +56,6 @@ class GmailOAuthService {
     };
   }
 
-  // Generate OAuth URL for user authorization
   getAuthUrl(): string {
     if (!this.credentials) {
       throw new Error('Credentials not set. Please configure OAuth credentials first.');
@@ -72,13 +68,12 @@ class GmailOAuthService {
       response_type: 'code',
       access_type: 'offline',
       prompt: 'consent',
-      state: 'gmail_oauth_' + Date.now() // CSRF protection
+      state: 'gmail_oauth_' + Date.now()
     });
 
     return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   }
 
-  // Exchange authorization code for tokens
   async exchangeCodeForTokens(code: string): Promise<GmailTokens> {
     if (!this.credentials) {
       throw new Error('Credentials not set');
@@ -94,7 +89,7 @@ class GmailOAuthService {
       const tokenRequestBody = {
         client_id: this.credentials.clientId,
         client_secret: this.credentials.clientSecret,
-        code: code,
+        code,
         grant_type: 'authorization_code',
         redirect_uri: this.credentials.redirectUri,
       };
@@ -118,7 +113,7 @@ class GmailOAuthService {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error('Token exchange error:', errorData);
-        
+
         if (errorData.error === 'invalid_client') {
           throw new Error('OAuth client has been deleted or is invalid. Please recreate your OAuth credentials in Google Cloud Console.');
         }
@@ -144,12 +139,10 @@ class GmailOAuthService {
     }
   }
 
-  // Set tokens (for stored tokens)
   setTokens(tokens: GmailTokens) {
     this.tokens = tokens;
   }
 
-  // Refresh access token
   async refreshTokens(): Promise<GmailTokens> {
     if (!this.credentials || !this.tokens?.refresh_token) {
       throw new Error('Cannot refresh tokens: missing credentials or refresh token');
@@ -183,7 +176,6 @@ class GmailOAuthService {
     }
   }
 
-  // Make authenticated request to Gmail API
   private async makeGmailRequest(url: string): Promise<any> {
     if (!this.tokens) {
       throw new Error('Not authenticated. Please connect your Gmail account first.');
@@ -196,7 +188,6 @@ class GmailOAuthService {
       },
     });
 
-    // If token expired, try to refresh
     if (response.status === 401 && this.tokens.refresh_token) {
       try {
         await this.refreshTokens();
@@ -219,13 +210,9 @@ class GmailOAuthService {
     return response.json();
   }
 
-  // Fetch emails from Gmail API
   async fetchEmails(maxResults: number = 50): Promise<ProcessedEmail[]> {
     try {
-      // Build search query for job-related emails
       const query = this.buildJobSearchQuery();
-      
-      // Fetch message list
       const listUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=${maxResults}`;
       const listResponse = await this.makeGmailRequest(listUrl);
 
@@ -233,7 +220,6 @@ class GmailOAuthService {
         return [];
       }
 
-      // Fetch full message details in batches to avoid rate limits
       const batchSize = 10;
       const emails: ProcessedEmail[] = [];
 
@@ -253,7 +239,6 @@ class GmailOAuthService {
         const batchResults = await Promise.all(batchPromises);
         emails.push(...batchResults.filter(email => email !== null) as ProcessedEmail[]);
 
-        // Add small delay between batches to respect rate limits
         if (i + batchSize < listResponse.messages.length) {
           await new Promise(resolve => setTimeout(resolve, 100));
         }
@@ -266,7 +251,6 @@ class GmailOAuthService {
     }
   }
 
-  // Build search query for job-related emails
   private buildJobSearchQuery(): string {
     const jobKeywords = [
       'application', 'interview', 'position', 'role', 'job',
@@ -295,7 +279,6 @@ class GmailOAuthService {
     return `(${queries.join(' OR ')}) -is:spam -in:trash newer_than:6m`;
   }
 
-  // Parse Gmail message into ProcessedEmail format
   private parseEmailMessage(message: GmailMessage): ProcessedEmail | null {
     try {
       const headers = message.payload.headers;
@@ -303,17 +286,11 @@ class GmailOAuthService {
       const from = headers.find(h => h.name === 'From')?.value || '';
       const date = new Date(parseInt(message.internalDate));
 
-      // Extract email body
       const body = this.extractEmailBody(message.payload);
       const content = body.text || body.html || message.snippet;
 
-      // Extract company name
       const company = this.extractCompanyName(from, subject, content);
-
-      // Detect job status
       const statusDetection = this.detectJobStatus(subject, content);
-
-      // Check if message is unread
       const isRead = !message.labelIds?.includes('UNREAD');
 
       return {
@@ -334,7 +311,6 @@ class GmailOAuthService {
     }
   }
 
-  // Extract email body content
   private extractEmailBody(payload: any): { text?: string; html?: string } {
     let text = '';
     let html = '';
@@ -375,9 +351,7 @@ class GmailOAuthService {
     return { text, html };
   }
 
-  // Extract company name from email
   private extractCompanyName(from: string, subject: string, content: string): string {
-    // Extract from sender email domain
     const emailMatch = from.match(/@([^.]+)\./);
     if (emailMatch) {
       const domain = emailMatch[1];
@@ -387,7 +361,6 @@ class GmailOAuthService {
       }
     }
 
-    // Extract from sender name
     const nameMatch = from.match(/^([^<]+)</);
     if (nameMatch) {
       const name = nameMatch[1].trim();
@@ -396,7 +369,6 @@ class GmailOAuthService {
       }
     }
 
-    // Extract from subject or content
     const companyPatterns = [
       /at ([A-Z][a-zA-Z\s&]+)/,
       /from ([A-Z][a-zA-Z\s&]+)/,
@@ -414,7 +386,6 @@ class GmailOAuthService {
     return '';
   }
 
-  // Detect job application status from email content
   private detectJobStatus(subject: string, content: string): { status: ProcessedEmail['status']; confidence: number } {
     const text = (subject + ' ' + content).toLowerCase();
 
@@ -472,12 +443,10 @@ class GmailOAuthService {
     return bestMatch;
   }
 
-  // Capitalize company name
   private capitalizeCompanyName(name: string): string {
     return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
   }
 
-  // Get user info
   async getUserInfo(): Promise<{ email: string; name: string }> {
     try {
       const response = await this.makeGmailRequest(
@@ -494,7 +463,6 @@ class GmailOAuthService {
     }
   }
 
-  // Revoke access
   async revokeAccess(): Promise<void> {
     if (!this.tokens) {
       return;
@@ -511,12 +479,10 @@ class GmailOAuthService {
     }
   }
 
-  // Check if currently authenticated
   isAuthenticated(): boolean {
     return !!(this.tokens && this.tokens.access_token);
   }
 
-  // Get current tokens
   getTokens(): GmailTokens | null {
     return this.tokens;
   }

@@ -43,6 +43,12 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
+    gmailOAuthService.setCredentials({
+      clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      clientSecret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
+      redirectUri: `${window.location.origin}/auth-callback.html`,
+    });
+
     if (user) restoreSession();
   }, [user]);
 

@@ -5,14 +5,12 @@ import { JobForm } from "@/components/JobForm";
 import { EmailJobMatcher } from "@/components/EmailJobMatcher";
 import { Job } from "@/types/Job";
 import { useGmail } from "@/context/GmailContext";
-import { intelligentEmailProcessor } from '@/services/intelligentEmailProcessor';
-import { ProcessedEmail } from '@/services/gmailOAuthService';
 import { useToast } from "@/hooks/use-toast";
 
 export default function Index() {
   const { processedEmails, isConnected } = useGmail();
   const { toast } = useToast();
-  
+
   const [jobs, setJobs] = useState<Job[]>([
     {
       id: '1',
@@ -73,54 +71,17 @@ export default function Index() {
     setJobs(jobs.filter(job => job.id !== jobId));
   };
 
-  const handleCreateJobFromEmail = (email: ProcessedEmail) => {
-    const newJob: Job = {
-      id: Date.now().toString(),
-      company: email.company,
-      role: intelligentEmailProcessor.extractJobTitle(email.subject, email.fullContent || ''),
-      platform: intelligentEmailProcessor.extractPlatform(email.sender),
-      applicationDate: email.date.toISOString().split('T')[0],
-      status: email.status || 'applied',
-      notes: `Auto-created from email: ${email.subject}`,
-      url: undefined,
-      testDate: undefined,
-      interviewDate: undefined
-    };
-    
-    setJobs([...jobs, newJob]);
-    
-    toast({
-      title: "Job Created from Email",
-      description: `Created job application for ${newJob.role} at ${newJob.company}`,
-    });
-  };
-
-  const handleViewEmail = (email: ProcessedEmail) => {
-    // Open Gmail in new tab
-    const gmailUrl = `https://mail.google.com/mail/u/0/#inbox/${email.id}`;
-    window.open(gmailUrl, '_blank');
-  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="min-h-screen bg-black/20 backdrop-blur-sm">
         <Header onAddJob={handleAddJob} />
         <main className="container mx-auto px-4 py-6 space-y-6">
-          {/* Proactive Alerts */}
-          {isConnected && (
-            <ProactiveAlerts 
-              jobs={jobs} 
-              emails={processedEmails}
-              onCreateJob={handleCreateJobFromEmail}
-              onUpdateJob={updateJobStatus}
-            />
-          )}
-          
           {/* Enhanced Email Job Matcher */}
           {isConnected && processedEmails.length > 0 && (
             <EmailJobMatcher 
               emails={processedEmails}
               jobs={jobs}
-              onCreateJob={handleCreateJobFromEmail}
+              onCreateJob={handleJobSubmit}
               onUpdateJobStatus={updateJobStatus}
             />
           )}
@@ -130,8 +91,6 @@ export default function Index() {
             emails={processedEmails}
             onUpdateJobStatus={updateJobStatus}
             onDeleteJob={deleteJob}
-            onCreateJobFromEmail={handleCreateJobFromEmail}
-            onViewEmail={handleViewEmail}
           />
         </main>
         {showJobForm && (

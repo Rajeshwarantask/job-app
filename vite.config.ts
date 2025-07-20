@@ -68,25 +68,25 @@ export default defineConfig(({ mode }: { mode: string }) => ({
         lang: 'en',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: 'favicon.ico',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'favicon.ico',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'favicon.ico',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
           },
           {
-            src: 'apple-touch-icon.png',
+            src: 'favicon.ico',
             sizes: '180x180',
             type: 'image/png',
             purpose: 'any'
@@ -95,7 +95,7 @@ export default defineConfig(({ mode }: { mode: string }) => ({
         categories: ['productivity', 'business', 'utilities'],
         screenshots: [
           {
-            src: 'pwa-512x512.png',
+            src: 'favicon.ico',
             sizes: '512x512',
             type: 'image/png',
             form_factor: 'wide',

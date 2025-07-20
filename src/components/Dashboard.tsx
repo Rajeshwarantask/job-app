@@ -4,21 +4,32 @@ import { Job } from "@/types/Job";
 import { StatusBoard } from "@/components/StatusBoard";
 import { StatsOverview } from "@/components/StatsOverview";
 import { JobList } from "@/components/JobList";
+import { ProcessedEmail } from '@/services/gmailOAuthService';
 import { LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DashboardProps {
   jobs: Job[];
+  emails: ProcessedEmail[];
   onUpdateJobStatus: (jobId: string, status: Job['status']) => void;
   onDeleteJob: (jobId: string) => void;
+  onCreateJobFromEmail?: (email: ProcessedEmail) => void;
+  onViewEmail?: (email: ProcessedEmail) => void;
 }
 
-export const Dashboard = ({ jobs, onUpdateJobStatus, onDeleteJob }: DashboardProps) => {
+export const Dashboard = ({ 
+  jobs, 
+  emails, 
+  onUpdateJobStatus, 
+  onDeleteJob, 
+  onCreateJobFromEmail,
+  onViewEmail 
+}: DashboardProps) => {
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
 
   return (
     <div className="space-y-8">
-      <StatsOverview jobs={jobs} />
+      <StatsOverview jobs={jobs} emails={emails} />
       
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white">Your Applications</h2>
@@ -48,12 +59,16 @@ export const Dashboard = ({ jobs, onUpdateJobStatus, onDeleteJob }: DashboardPro
       {viewMode === 'board' ? (
         <StatusBoard 
           jobs={jobs}
+          emails={emails}
           onUpdateJobStatus={onUpdateJobStatus}
           onDeleteJob={onDeleteJob}
+          onCreateJobFromEmail={onCreateJobFromEmail}
+          onViewEmail={onViewEmail}
         />
       ) : (
         <JobList 
           jobs={jobs}
+          emails={emails}
           onUpdateJobStatus={onUpdateJobStatus}
           onDeleteJob={onDeleteJob}
         />

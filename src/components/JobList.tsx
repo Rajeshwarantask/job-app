@@ -3,12 +3,17 @@ import { Job } from "@/types/Job";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmailCard } from "@/components/EmailCard";
+import { ProcessedEmail } from '@/services/gmailOAuthService';
 import { Calendar, ExternalLink, Trash2, Building2 } from "lucide-react";
 
 interface JobListProps {
   jobs: Job[];
+  emails?: ProcessedEmail[];
   onUpdateJobStatus: (jobId: string, status: Job['status']) => void;
   onDeleteJob: (jobId: string) => void;
+  onCreateJobFromEmail?: (email: ProcessedEmail) => void;
+  onViewEmail?: (email: ProcessedEmail) => void;
 }
 
 const statusColors = {
@@ -18,9 +23,32 @@ const statusColors = {
   rejected: 'bg-red-500/20 text-red-300 border-red-500/30'
 };
 
-export const JobList = ({ jobs, onUpdateJobStatus, onDeleteJob }: JobListProps) => {
+export const JobList = ({ 
+  jobs, 
+  emails = [], 
+  onUpdateJobStatus, 
+  onDeleteJob,
+  onCreateJobFromEmail,
+  onViewEmail 
+}: JobListProps) => {
+  
+  // Filter high-confidence emails
+  const relevantEmails = emails.filter(email => email.confidence > 0.6);
+  const totalItems = jobs.length + relevantEmails.length;
+
   return (
     <div className="space-y-4">
+      {/* Display Gmail Emails First */}
+      {relevantEmails.map((email) => (
+        <EmailCard
+          key={`email-${email.id}`}
+          email={email}
+          onCreateJob={onCreateJobFromEmail}
+          onViewEmail={onViewEmail}
+        />
+      ))}
+      
+      {/* Display Existing Jobs */}
       {jobs.map((job) => (
         <Card key={job.id} className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300">
           <CardContent className="p-6">
@@ -82,7 +110,7 @@ export const JobList = ({ jobs, onUpdateJobStatus, onDeleteJob }: JobListProps) 
         </Card>
       ))}
 
-      {jobs.length === 0 && (
+      {totalItems === 0 && (
         <Card className="bg-white/5 border-white/10">
           <CardContent className="p-12 text-center">
             <p className="text-gray-400 text-lg">No job applications yet</p>

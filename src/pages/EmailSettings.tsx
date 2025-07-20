@@ -26,6 +26,7 @@ import {
   Calendar,
   Shield
 } from "lucide-react";
+import { PWAStatus } from '@/components/PWAStatus';
 
 export const EmailSettings = () => {
   const navigate = useNavigate();
@@ -513,6 +514,9 @@ export const EmailSettings = () => {
               </Card>
             )}
           </div>
+
+          {/* PWA Status */}
+          <PWAStatus />
         </div>
       </div>
     </div>

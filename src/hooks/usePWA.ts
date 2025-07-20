@@ -5,6 +5,7 @@ interface PWAStatus {
   isInstallable: boolean;
   isOnline: boolean;
   isUpdateAvailable: boolean;
+  installPrompt: any;
 }
 
 export const usePWA = () => {
@@ -12,7 +13,8 @@ export const usePWA = () => {
     isInstalled: false,
     isInstallable: false,
     isOnline: navigator.onLine,
-    isUpdateAvailable: false
+    isUpdateAvailable: false,
+    installPrompt: null
   });
 
   useEffect(() => {
@@ -28,7 +30,7 @@ export const usePWA = () => {
     // Check for installability
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setStatus(prev => ({ ...prev, isInstallable: true }));
+      setStatus(prev => ({ ...prev, isInstallable: true, installPrompt: e }));
     };
 
     // Handle online/offline status
@@ -37,7 +39,7 @@ export const usePWA = () => {
 
     // Handle app installation
     const handleAppInstalled = () => {
-      setStatus(prev => ({ ...prev, isInstalled: true, isInstallable: false }));
+      setStatus(prev => ({ ...prev, isInstalled: true, isInstallable: false, installPrompt: null }));
     };
 
     // Check for service worker updates
@@ -65,12 +67,28 @@ export const usePWA = () => {
     };
   }, []);
 
+  const installApp = async () => {
+    if (status.installPrompt) {
+      try {
+        await status.installPrompt.prompt();
+        const { outcome } = await status.installPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+          setStatus(prev => ({ ...prev, installPrompt: null, isInstallable: false }));
+        }
+      } catch (error) {
+        console.error('Installation failed:', error);
+      }
+    }
+  };
+
   const reloadApp = () => {
     window.location.reload();
   };
 
   return {
     ...status,
-    reloadApp
+    reloadApp,
+    installApp
   };
 };

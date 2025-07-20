@@ -4,11 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#667eea" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f172a" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="JobTrail" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="msapplication-TileColor" content="#667eea" />
     <meta name="msapplication-config" content="/browserconfig.xml" />
+    <meta name="msapplication-starturl" content="/" />
     
     <title>Job Tracker</title>
     <meta name="description" content="Track, manage, and optimize your job application journey with intelligent automation and beautiful insights." />
@@ -17,12 +20,24 @@
     <meta property="og:title" content="Career Compass - Smart Job Application Tracker" />
     <meta property="og:description" content="Track, manage, and optimize your job application journey with intelligent automation and beautiful insights." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="/" />
+    <meta property="og:image" content="/pwa-512x512.png" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="JobTrail - Smart Job Application Tracker" />
+    <meta name="twitter:description" content="Track, manage, and optimize your job application journey with intelligent automation and beautiful insights." />
+    <meta name="twitter:image" content="/pwa-512x512.png" />
     
     <!-- PWA Icons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="mask-icon" href="/masked-icon.svg" color="#667eea" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/src/main.tsx" as="script" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://api.dicebear.com" />
   </head>
 
   <body>

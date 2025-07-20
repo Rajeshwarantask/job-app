@@ -15,60 +15,6 @@ export default defineConfig(({ mode }: { mode: string }) => ({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
-      manifest: {
-        name: 'JobTrail - Smart Job Application Tracker',
-        short_name: 'JobTrail',
-        description: 'Track, manage, and optimize your job application journey with intelligent automation and beautiful insights.',
-        theme_color: '#667eea',
-        background_color: '#1a1a2e',
-        display: 'standalone',
-        orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
-        icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable'
-          }
-        ],
-        categories: ['productivity', 'business', 'utilities'],
-        shortcuts: [
-          {
-            name: 'Add Job Application',
-            short_name: 'Add Job',
-            description: 'Quickly add a new job application',
-            url: '/?action=add-job',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
-          },
-          {
-            name: 'View Analytics',
-            short_name: 'Analytics',
-            description: 'View your application analytics',
-            url: '/analytics',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
-          },
-          {
-            name: 'Gmail Inbox',
-            short_name: 'Inbox',
-            description: 'Check your Gmail inbox',
-            url: '/inbox',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
-          }
-        ]
-      },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
@@ -105,6 +51,78 @@ export default defineConfig(({ mode }: { mode: string }) => ({
                 maxAgeSeconds: 60 * 5 // 5 minutes
               }
             }
+          }
+        ]
+      },
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      manifest: {
+        name: 'JobTrail - Smart Job Application Tracker',
+        short_name: 'JobTrail',
+        description: 'Track, manage, and optimize your job application journey with intelligent automation and beautiful insights.',
+        theme_color: '#667eea',
+        background_color: '#0f172a',
+        display: 'standalone',
+        start_url: '/',
+        scope: '/',
+        orientation: 'portrait',
+        lang: 'en',
+        icons: [
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
+          },
+          {
+            src: 'apple-touch-icon.png',
+            sizes: '180x180',
+            type: 'image/png',
+            purpose: 'any'
+          }
+        ],
+        categories: ['productivity', 'business', 'utilities'],
+        screenshots: [
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            form_factor: 'wide',
+            label: 'JobTrail Dashboard'
+          }
+        ],
+        shortcuts: [
+          {
+            name: 'Add Job Application',
+            short_name: 'Add Job',
+            description: 'Quickly add a new job application',
+            url: '/?action=add-job',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          },
+          {
+            name: 'View Analytics',
+            short_name: 'Analytics',
+            description: 'View your application analytics',
+            url: '/analytics',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          },
+          {
+            name: 'Gmail Inbox',
+            short_name: 'Inbox',
+            description: 'Check your Gmail inbox',
+            url: '/inbox',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
           }
         ]
       },

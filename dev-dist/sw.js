@@ -82,11 +82,12 @@ define(['./workbox-f001acab'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "index.html",
-    "revision": "0.tol7bp37rs"
+    "revision": "0.290lgklmth8"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
-    allowlist: [/^\/$/]
+    allowlist: [/^\/$/],
+    denylist: [/auth-callback\.html$/]
   }));
   workbox.registerRoute(/^https:\/\/api\.dicebear\.com\/.*/i, new workbox.CacheFirst({
     "cacheName": "dicebear-avatars",

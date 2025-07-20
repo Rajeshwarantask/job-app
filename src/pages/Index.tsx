@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Dashboard } from "@/components/Dashboard";
 import { JobForm } from "@/components/JobForm";
-import { EnhancedEmailJobMatcher } from "@/components/EnhancedEmailJobMatcher";
+import { EmailJobMatcher } from "@/components/EmailJobMatcher";
 import { ProactiveAlerts } from "@/components/ProactiveAlerts";
 import { Job } from "@/types/Job";
 import { useGmail } from "@/context/GmailContext";
@@ -118,7 +118,7 @@ export default function Index() {
           
           {/* Enhanced Email Job Matcher */}
           {isConnected && processedEmails.length > 0 && (
-            <EnhancedEmailJobMatcher 
+            <EmailJobMatcher 
               emails={processedEmails}
               jobs={jobs}
               onCreateJob={handleCreateJobFromEmail}

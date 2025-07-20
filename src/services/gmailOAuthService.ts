@@ -67,7 +67,7 @@ class GmailOAuthService {
 
     const params = new URLSearchParams({
       client_id: this.credentials.clientId,
-      redirect_uri: `${window.location.origin}/auth-callback.html`,
+      redirect_uri: this.credentials.redirectUri,
       scope: this.SCOPES.join(' '),
       response_type: 'code',
       access_type: 'offline',

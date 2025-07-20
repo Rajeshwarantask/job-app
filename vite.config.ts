@@ -16,7 +16,8 @@ export default defineConfig(({ mode }: { mode: string }) => ({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+       // globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        navigateFallbackDenylist: [/auth-callback\.html$/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.dicebear\.com\/.*/i,
@@ -67,41 +68,35 @@ export default defineConfig(({ mode }: { mode: string }) => ({
         orientation: 'portrait',
         lang: 'en',
         icons: [
-          {
-            src: 'favicon.ico',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any'
-          },
-          {
-            src: 'favicon.ico',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any'
-          },
-          {
-            src: 'favicon.ico',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable'
-          },
-          {
-            src: 'favicon.ico',
-            sizes: '180x180',
-            type: 'image/png',
-            purpose: 'any'
-          }
+              {
+                src: 'pwa-192x192.png',
+                sizes: '192x192',
+                type: 'image/png',
+                purpose: 'any'
+              },
+              {
+                src: 'pwa-512x512.png',
+                sizes: '512x512',
+                type: 'image/png',
+                purpose: 'any'
+              },
+              {
+                src: 'pwa-512x512-maskable.png',
+                sizes: '512x512',
+                type: 'image/png',
+                purpose: 'maskable'
+              }
         ],
         categories: ['productivity', 'business', 'utilities'],
         screenshots: [
-          {
-            src: 'favicon.ico',
-            sizes: '512x512',
-            type: 'image/png',
-            form_factor: 'wide',
-            label: 'JobTrail Dashboard'
-          }
-        ],
+                {
+                  src: 'screenshot.png',
+                  sizes: '1280x720',
+                  type: 'image/png',
+                  form_factor: 'wide',
+                  label: 'JobTrail Dashboard'
+                }
+              ],
         shortcuts: [
           {
             name: 'Add Job Application',

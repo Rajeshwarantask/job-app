@@ -196,7 +196,19 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
           window.removeEventListener('message', handleCallback);
         }
       };
-      
+      const pollTimer = setInterval(() => {
+    if (popup?.closed) {
+      clearInterval(pollTimer);
+      window.removeEventListener('message', handleCallback);
+      toast({
+        title: 'Popup Closed',
+        description: 'OAuth popup was closed before authentication completed.',
+        variant: 'destructive',
+      });
+      setIsConnecting(false);
+    }
+    }, 500);
+
       window.addEventListener('message', handleCallback);
 
       const timeout = setTimeout(() => {
@@ -236,6 +248,7 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
     toast({ title, description, variant: 'destructive' });
   };
 
+  
   const disconnectGmail = useCallback(async () => {
     if (!user) return;
 

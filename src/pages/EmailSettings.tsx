@@ -280,16 +280,16 @@ export const EmailSettings = () => {
                       <ol className="text-gray-300 text-sm space-y-2 list-decimal list-inside">
                         <li>Go to Google Cloud Console → APIs & Services → Credentials</li>
                         <li>Create OAuth 2.0 Client ID (Web application)</li>
-                        <li>Add <code className="bg-white/10 px-1 rounded">http://localhost:5173</code> to authorized JavaScript origins</li>
-                        <li>Add <code className="bg-white/10 px-1 rounded">http://localhost:5173/auth-callback.html</code> to redirect URIs</li>
+                        <li>Add <code className="bg-white/10 px-1 rounded">{window.location.origin}</code> to authorized JavaScript origins</li>
+                        <li>Add <code className="bg-white/10 px-1 rounded">{window.location.origin}/auth-callback.html</code> to redirect URIs</li>
                         <li>Copy Client ID and Secret below</li>
                       </ol>
                       
                       <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded">
                         <p className="text-red-300 text-xs">
                           <strong>⚠️ Common Errors:</strong> 
-                          <br />• Make sure redirect URI is exactly: <code className="bg-white/10 px-1 rounded">http://localhost:5173/auth-callback.html</code>
-                          <br />• JavaScript origins should be: <code className="bg-white/10 px-1 rounded">http://localhost:5173</code> (no trailing slash)
+                          <br />• Make sure redirect URI is exactly: <code className="bg-white/10 px-1 rounded">{window.location.origin}/auth-callback.html</code>
+                          <br />• JavaScript origins should be: <code className="bg-white/10 px-1 rounded">{window.location.origin}</code> (no trailing slash)
                           <br />• Use "http" not "https" for localhost development
                         </p>
                       </div>

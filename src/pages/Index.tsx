@@ -3,7 +3,6 @@ import { Header } from "@/components/Header";
 import { Dashboard } from "@/components/Dashboard";
 import { JobForm } from "@/components/JobForm";
 import { EmailJobMatcher } from "@/components/EmailJobMatcher";
-import { ProactiveAlerts } from "@/components/ProactiveAlerts";
 import { Job } from "@/types/Job";
 import { useGmail } from "@/context/GmailContext";
 import { intelligentEmailProcessor } from '@/services/intelligentEmailProcessor';

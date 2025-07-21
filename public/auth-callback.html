@@ -73,6 +73,12 @@
             document.querySelector('.spinner').style.display = 'none';
         }
 
+        function redirectToApp(path = '/') {
+            // For deployed environments, redirect to the main app
+            const baseUrl = window.location.origin;
+            window.location.href = baseUrl + path;
+        }
+
         // Check for OAuth response
         const code = getUrlParameter('code');
         const error = getUrlParameter('error');
@@ -87,11 +93,21 @@
                     type: 'GMAIL_OAUTH_ERROR',
                     error: error
                 }, window.location.origin);
+                
+                setTimeout(() => {
+                    window.close();
+                }, 3000);
+            } else {
+                // If no opener (deployed environment), redirect with error
+                localStorage.setItem('gmail_oauth_result', JSON.stringify({
+                    type: 'GMAIL_OAUTH_ERROR',
+                    error: error
+                }));
+                
+                setTimeout(() => {
+                    redirectToApp('/email-settings');
+                }, 3000);
             }
-            
-            setTimeout(() => {
-                window.close();
-            }, 3000);
         } else if (code) {
             updateStatus('Connection Successful!', 'Gmail has been connected successfully.');
             
@@ -103,17 +119,35 @@
                     code: code,
                     state: state
                 }, window.location.origin);
+                
+                setTimeout(() => {
+                    window.close();
+                }, 2000);
+            } else {
+                // If no opener (deployed environment), store result and redirect
+                console.log('No opener found, storing OAuth result and redirecting...');
+                localStorage.setItem('gmail_oauth_result', JSON.stringify({
+                    type: 'GMAIL_OAUTH_SUCCESS',
+                    code: code,
+                    state: state
+                }));
+                
+                setTimeout(() => {
+                    redirectToApp('/email-settings');
+                }, 2000);
             }
-            
-            setTimeout(() => {
-                window.close();
-            }, 2000);
         } else {
             updateStatus('Invalid Response', 'No authorization code received.', true);
             
-            setTimeout(() => {
-                window.close();
-            }, 3000);
+            if (window.opener) {
+                setTimeout(() => {
+                    window.close();
+                }, 3000);
+            } else {
+                setTimeout(() => {
+                    redirectToApp('/email-settings');
+                }, 3000);
+            }
         }
     </script>
 </body>

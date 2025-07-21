@@ -61,9 +61,12 @@ class GmailOAuthService {
       throw new Error('Credentials not set. Please configure OAuth credentials first.');
     }
 
+    // Ensure redirect URI is properly set for current environment
+    const redirectUri = `${window.location.origin}/auth-callback.html`;
+    
     const params = new URLSearchParams({
       client_id: this.credentials.clientId,
-      redirect_uri: this.credentials.redirectUri,
+      redirect_uri: redirectUri,
       scope: this.SCOPES.join(' '),
       response_type: 'code',
       access_type: 'offline',
@@ -79,9 +82,12 @@ class GmailOAuthService {
       throw new Error('Credentials not set');
     }
 
+    // Use current origin for redirect URI to ensure consistency
+    const redirectUri = `${window.location.origin}/auth-callback.html`;
+
     console.log('Exchanging code for tokens...', {
       clientId: this.credentials.clientId.substring(0, 20) + '...',
-      redirectUri: this.credentials.redirectUri,
+      redirectUri: redirectUri,
       codeLength: code.length
     });
 
@@ -91,7 +97,7 @@ class GmailOAuthService {
         client_secret: this.credentials.clientSecret,
         code,
         grant_type: 'authorization_code',
-        redirect_uri: this.credentials.redirectUri,
+        redirect_uri: redirectUri,
       };
 
       console.log('Token request body:', {
@@ -124,7 +130,7 @@ class GmailOAuthService {
           throw new Error('Authorization code is invalid or expired. Please try signing in again.');
         }
         if (errorData.error === 'redirect_uri_mismatch') {
-          throw new Error('Redirect URI mismatch. Please ensure your Google Cloud Console has the correct redirect URI: ' + this.credentials.redirectUri);
+          throw new Error('Redirect URI mismatch. Please ensure your Google Cloud Console has the correct redirect URI: ' + redirectUri);
         }
         throw new Error(`Token exchange failed: ${errorData.error_description || errorData.error || response.statusText}`);
       }

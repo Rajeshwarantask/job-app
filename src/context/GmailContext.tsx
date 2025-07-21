@@ -50,7 +50,59 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
     });
 
     if (user) restoreSession();
+    
+    // Check for OAuth result from redirect flow (deployed environment)
+    checkOAuthResult();
   }, [user]);
+
+  // Check for OAuth result stored by auth-callback.html
+  const checkOAuthResult = async () => {
+    const oauthResult = localStorage.getItem('gmail_oauth_result');
+    if (oauthResult && user) {
+      try {
+        const result = JSON.parse(oauthResult);
+        localStorage.removeItem('gmail_oauth_result');
+        
+        if (result.type === 'GMAIL_OAUTH_SUCCESS') {
+          console.log('Processing stored OAuth success result...');
+          await processOAuthSuccess(result.code);
+        } else if (result.type === 'GMAIL_OAUTH_ERROR') {
+          console.error('Processing stored OAuth error:', result.error);
+          handleOAuthError(result.error);
+        }
+      } catch (error) {
+        console.error('Error processing stored OAuth result:', error);
+        localStorage.removeItem('gmail_oauth_result');
+      }
+    }
+  };
+
+  // Extract OAuth success processing logic
+  const processOAuthSuccess = async (code: string) => {
+    try {
+      console.log('Processing OAuth code...');
+      const tokens = await gmailOAuthService.exchangeCodeForTokens(code);
+      const userInfo = await gmailOAuthService.getUserInfo();
+
+      localStorage.setItem(`gmail_tokens_${user?.id}`, JSON.stringify(tokens));
+      localStorage.setItem(`gmail_connected_${user?.id}`, 'true');
+      localStorage.setItem(`gmail_user_email_${user?.id}`, userInfo.email);
+
+      setIsConnected(true);
+      setUserEmail(userInfo.email);
+
+      toast({
+        title: 'Gmail Connected!',
+        description: `Successfully connected ${userInfo.email}`,
+      });
+
+      // Sync emails after successful connection
+      await syncEmails();
+    } catch (error) {
+      console.error('OAuth processing error:', error);
+      handleOAuthError(error);
+    }
+  };
 
   // Unified restoration logic
   const restoreSession = () => {
@@ -145,13 +197,19 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       const authUrl = gmailOAuthService.getAuthUrl();
+      
+      // Check if we're in a deployed environment or if popups are blocked
+      const isDeployedEnv = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      
       const popup = window.open(
         authUrl,
         'gmail-oauth',
         'width=500,height=600,scrollbars=yes,resizable=yes'
       );
 
-      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+      // If popup is blocked or we're in deployed environment, use redirect flow
+      if (!popup || popup.closed || typeof popup.closed === 'undefined' || isDeployedEnv) {
+        console.log('Using redirect flow for OAuth...');
         localStorage.setItem('gmail_auth_return_url', '/inbox');
         window.location.href = authUrl;
         return;
@@ -164,37 +222,10 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
         clearTimeout(timeout);
 
         if (event.data.type === 'GMAIL_OAUTH_SUCCESS') {
-          try {
-            const { code } = event.data;
-            console.log('Processing OAuth code...');
-            const tokens = await gmailOAuthService.exchangeCodeForTokens(code);
-            const userInfo = await gmailOAuthService.getUserInfo();
-
-            localStorage.setItem(`gmail_tokens_${user.id}`, JSON.stringify(tokens));
-            localStorage.setItem(`gmail_connected_${user.id}`, 'true');
-            localStorage.setItem(`gmail_user_email_${user.id}`, userInfo.email);
-
-            setIsConnected(true);
-            setUserEmail(userInfo.email);
-
-            toast({
-              title: 'Gmail Connected!',
-              description: `Successfully connected ${userInfo.email}`,
-            });
-
-            // Close popup first
-            popup?.close();
-            window.removeEventListener('message', handleCallback);
-            
-            // Sync emails and navigate to inbox
-            await syncEmails();
-            navigate('/inbox');
-          } catch (error) {
-            console.error('OAuth processing error:', error);
-            handleOAuthError(error);
-            popup?.close();
-            window.removeEventListener('message', handleCallback);
-          }
+          await processOAuthSuccess(event.data.code);
+          popup?.close();
+          window.removeEventListener('message', handleCallback);
+          navigate('/inbox');
         } else if (event.data.type === 'GMAIL_OAUTH_ERROR') {
           console.error('OAuth error:', event.data.error);
           handleOAuthError(event.data.error);

@@ -74,9 +74,13 @@
         }
 
         function redirectToApp(path = '/') {
-            // For deployed environments, redirect to the main app
+            // Get the return URL or default to root
+            const returnUrl = localStorage.getItem('gmail_auth_return_url') || '/';
+            localStorage.removeItem('gmail_auth_return_url');
+            
             const baseUrl = window.location.origin;
-            window.location.href = baseUrl + path;
+            console.log('Redirecting to:', baseUrl + returnUrl);
+            window.location.href = baseUrl + returnUrl;
         }
 
         // Check for OAuth response
@@ -84,11 +88,18 @@
         const error = getUrlParameter('error');
         const state = getUrlParameter('state');
 
+        console.log('OAuth callback received:', { 
+            hasCode: !!code, 
+            hasError: !!error, 
+            hasOpener: !!window.opener,
+            origin: window.location.origin 
+        });
         if (error) {
             updateStatus('Connection Failed', `Error: ${error}`, true);
             
             // Send error to parent window
             if (window.opener) {
+                console.log('Sending error to parent window:', error);
                 window.opener.postMessage({
                     type: 'GMAIL_OAUTH_ERROR',
                     error: error
@@ -99,13 +110,14 @@
                 }, 3000);
             } else {
                 // If no opener (deployed environment), redirect with error
+                console.log('No opener, storing error result');
                 localStorage.setItem('gmail_oauth_result', JSON.stringify({
                     type: 'GMAIL_OAUTH_ERROR',
                     error: error
                 }));
                 
                 setTimeout(() => {
-                    redirectToApp('/email-settings');
+                    redirectToApp();
                 }, 3000);
             }
         } else if (code) {
@@ -133,7 +145,7 @@
                 }));
                 
                 setTimeout(() => {
-                    redirectToApp('/email-settings');
+                    redirectToApp();
                 }, 2000);
             }
         } else {
@@ -145,7 +157,7 @@
                 }, 3000);
             } else {
                 setTimeout(() => {
-                    redirectToApp('/email-settings');
+                    redirectToApp();
                 }, 3000);
             }
         }

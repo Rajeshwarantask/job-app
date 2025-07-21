@@ -42,6 +42,7 @@ export interface ProcessedEmail {
 class GmailOAuthService {
   private credentials: GmailCredentials | null = null;
   private tokens: GmailTokens | null = null;
+  private currentRedirectUri: string = '';
 
   private readonly SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',
@@ -50,9 +51,11 @@ class GmailOAuthService {
   ];
 
   setCredentials(credentials: GmailCredentials) {
+    // Always use current origin for redirect URI to ensure environment compatibility
+    this.currentRedirectUri = `${window.location.origin}/auth-callback.html`;
     this.credentials = {
       ...credentials,
-      redirectUri: `${window.location.origin}/auth-callback.html`
+      redirectUri: this.currentRedirectUri
     };
   }
 
@@ -61,8 +64,8 @@ class GmailOAuthService {
       throw new Error('Credentials not set. Please configure OAuth credentials first.');
     }
 
-    // Ensure redirect URI is properly set for current environment
-    const redirectUri = `${window.location.origin}/auth-callback.html`;
+    // Use dynamically generated redirect URI
+    const redirectUri = this.currentRedirectUri || `${window.location.origin}/auth-callback.html`;
     
     const params = new URLSearchParams({
       client_id: this.credentials.clientId,
@@ -82,8 +85,8 @@ class GmailOAuthService {
       throw new Error('Credentials not set');
     }
 
-    // Use current origin for redirect URI to ensure consistency
-    const redirectUri = `${window.location.origin}/auth-callback.html`;
+    // Use the same redirect URI that was used for auth
+    const redirectUri = this.currentRedirectUri || `${window.location.origin}/auth-callback.html`;
 
     console.log('Exchanging code for tokens...', {
       clientId: this.credentials.clientId.substring(0, 20) + '...',

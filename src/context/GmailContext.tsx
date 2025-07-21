@@ -43,11 +43,15 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    gmailOAuthService.setCredentials({
-      clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-      clientSecret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
-      redirectUri: `${window.location.origin}/auth-callback.html`,
-    });
+    // Initialize OAuth service with dynamic credentials
+    if (import.meta.env.VITE_GOOGLE_CLIENT_ID && import.meta.env.VITE_GOOGLE_CLIENT_SECRET) {
+      gmailOAuthService.setCredentials({
+        clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+        clientSecret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
+        redirectUri: `${window.location.origin}/auth-callback.html`,
+      });
+      setHasCredentials(true);
+    }
 
     if (user) restoreSession();
     
@@ -155,16 +159,17 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
       if (!user) return;
 
       try {
-        const credentialsWithRedirect = {
+        // Always use current origin for maximum compatibility
+        const dynamicCredentials = {
           ...credentials,
           redirectUri: `${window.location.origin}/auth-callback.html`,
         };
 
         localStorage.setItem(
           `gmail_credentials_${user.id}`,
-          JSON.stringify(credentialsWithRedirect)
+          JSON.stringify(dynamicCredentials)
         );
-        gmailOAuthService.setCredentials(credentialsWithRedirect);
+        gmailOAuthService.setCredentials(dynamicCredentials);
         setHasCredentials(true);
 
         toast({
@@ -198,34 +203,35 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
     try {
       const authUrl = gmailOAuthService.getAuthUrl();
       
-      // Check if we're in a deployed environment or if popups are blocked
-      const isDeployedEnv = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      console.log('Starting OAuth flow with URL:', authUrl);
       
+      // Try popup first, fallback to redirect if needed
       const popup = window.open(
         authUrl,
         'gmail-oauth',
         'width=500,height=600,scrollbars=yes,resizable=yes'
       );
 
-      // If popup is blocked or we're in deployed environment, use redirect flow
-      if (!popup || popup.closed || typeof popup.closed === 'undefined' || isDeployedEnv) {
+      // If popup is blocked or fails, use redirect flow
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
         console.log('Using redirect flow for OAuth...');
-        localStorage.setItem('gmail_auth_return_url', '/inbox');
+        localStorage.setItem('gmail_auth_return_url', window.location.pathname);
         window.location.href = authUrl;
         return;
       }
 
+      // Setup popup monitoring
       const handleCallback = async (event: MessageEvent) => {
         if (event.origin !== window.location.origin) return;
         
         console.log('Received OAuth callback:', event.data);
         clearTimeout(timeout);
+        clearInterval(pollTimer);
 
         if (event.data.type === 'GMAIL_OAUTH_SUCCESS') {
           await processOAuthSuccess(event.data.code);
           popup?.close();
           window.removeEventListener('message', handleCallback);
-          navigate('/inbox');
         } else if (event.data.type === 'GMAIL_OAUTH_ERROR') {
           console.error('OAuth error:', event.data.error);
           handleOAuthError(event.data.error);
@@ -233,23 +239,35 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
           window.removeEventListener('message', handleCallback);
         }
       };
+      
+      // Monitor popup closure
       const pollTimer = setInterval(() => {
-    if (popup?.closed) {
-      clearInterval(pollTimer);
-      window.removeEventListener('message', handleCallback);
-      toast({
-        title: 'Popup Closed',
-        description: 'OAuth popup was closed before authentication completed.',
-        variant: 'destructive',
-      });
-      setIsConnecting(false);
-    }
-    }, 500);
+        if (popup?.closed) {
+          clearInterval(pollTimer);
+          clearTimeout(timeout);
+          window.removeEventListener('message', handleCallback);
+          
+          // Check if OAuth was completed via redirect
+          setTimeout(() => {
+            const oauthResult = localStorage.getItem('gmail_oauth_result');
+            if (!oauthResult) {
+              toast({
+                title: 'Authentication Cancelled',
+                description: 'OAuth popup was closed before authentication completed.',
+                variant: 'destructive',
+              });
+            }
+            setIsConnecting(false);
+          }, 1000);
+        }
+      }, 500);
 
       window.addEventListener('message', handleCallback);
 
+      // Timeout for OAuth process
       const timeout = setTimeout(() => {
         console.log('OAuth timeout');
+        clearInterval(pollTimer);
         toast({
           title: 'OAuth Timeout',
           description: 'Google sign-in took too long. Please try again.',
@@ -263,7 +281,7 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
       console.error('OAuth initiation error:', error);
       handleOAuthError(error);
     } finally {
-      setIsConnecting(false);
+      // Don't set connecting to false here as it might be handled by callbacks
     }
   }, [user, hasCredentials, toast]);
 

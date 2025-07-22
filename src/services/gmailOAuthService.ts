@@ -64,8 +64,10 @@ class GmailOAuthService {
       throw new Error('Credentials not set. Please configure OAuth credentials first.');
     }
 
-    // Use dynamically generated redirect URI
-    const redirectUri = this.currentRedirectUri || `${window.location.origin}/auth-callback.html`;
+    // Always use current origin for maximum compatibility
+    const redirectUri = `${window.location.origin}/auth-callback.html`;
+    
+    console.log('Generating auth URL with redirect URI:', redirectUri);
     
     const params = new URLSearchParams({
       client_id: this.credentials.clientId,
@@ -74,7 +76,9 @@ class GmailOAuthService {
       response_type: 'code',
       access_type: 'offline',
       prompt: 'consent',
-      state: 'gmail_oauth_' + Date.now()
+      state: 'gmail_oauth_' + Date.now(),
+      // Add cache busting parameter
+      t: Date.now().toString()
     });
 
     return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;

@@ -65,6 +65,7 @@ export const GmailProvider = ({ children }: { children: ReactNode }) => {
     if (oauthResult && user) {
       try {
         const result = JSON.parse(oauthResult);
+        console.log('Processing stored OAuth result:', result);
         localStorage.removeItem('gmail_oauth_result');
         
         if (result.type === 'GMAIL_OAUTH_SUCCESS') {

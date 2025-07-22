@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gmail OAuth Callback</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -22,6 +25,7 @@
             border-radius: 12px;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 400px;
         }
         .spinner {
             width: 40px;
@@ -42,6 +46,16 @@
         .success {
             color: #51cf66;
         }
+        .debug {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -49,9 +63,25 @@
         <div class="spinner"></div>
         <h2 id="status">Processing Gmail connection...</h2>
         <p id="message">Please wait while we complete the setup.</p>
+        <div id="debug" class="debug" style="display: none;"></div>
     </div>
 
     <script>
+        // Prevent caching of this script
+        const timestamp = Date.now();
+        console.log(`[OAuth Callback] Script loaded at ${timestamp}`);
+        
+        // Debug logging function
+        function debugLog(message) {
+            console.log(`[OAuth Callback] ${message}`);
+            const debugDiv = document.getElementById('debug');
+            if (debugDiv) {
+                debugDiv.style.display = 'block';
+                debugDiv.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+                debugDiv.scrollTop = debugDiv.scrollHeight;
+            }
+        }
+
         function getUrlParameter(name) {
             name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
             const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
@@ -60,17 +90,19 @@
         }
 
         function updateStatus(title, message, isError = false) {
-            document.getElementById('status').textContent = title;
-            document.getElementById('message').textContent = message;
-            
+            const statusEl = document.getElementById('status');
+            const messageEl = document.getElementById('message');
             const container = document.querySelector('.container');
-            if (isError) {
-                container.classList.add('error');
-            } else {
-                container.classList.add('success');
-            }
+            const spinner = document.querySelector('.spinner');
             
-            document.querySelector('.spinner').style.display = 'none';
+            if (statusEl) statusEl.textContent = title;
+            if (messageEl) messageEl.textContent = message;
+            if (spinner) spinner.style.display = 'none';
+            
+            if (container) {
+                container.classList.remove('error', 'success');
+                container.classList.add(isError ? 'error' : 'success');
+            }
         }
 
         function redirectToApp(path = '/') {
@@ -79,88 +111,144 @@
             localStorage.removeItem('gmail_auth_return_url');
             
             const baseUrl = window.location.origin;
-            console.log('Redirecting to:', baseUrl + returnUrl);
-            window.location.href = baseUrl + returnUrl;
+            const targetUrl = baseUrl + returnUrl;
+            
+            debugLog(`Redirecting to: ${targetUrl}`);
+            
+            // Add a small delay to ensure user sees the success message
+            setTimeout(() => {
+                window.location.href = targetUrl;
+            }, 1500);
         }
 
-        // Check for OAuth response
-        const code = getUrlParameter('code');
-        const error = getUrlParameter('error');
-        const state = getUrlParameter('state');
+        // Main execution
+        try {
+            debugLog('OAuth callback page loaded');
+            debugLog(`Current URL: ${window.location.href}`);
+            debugLog(`Has opener: ${!!window.opener}`);
+            debugLog(`Origin: ${window.location.origin}`);
 
-        console.log('OAuth callback received:', { 
-            hasCode: !!code, 
-            hasError: !!error, 
-            hasOpener: !!window.opener,
-            origin: window.location.origin 
-        });
-        if (error) {
-            updateStatus('Connection Failed', `Error: ${error}`, true);
-            
-            // Send error to parent window
-            if (window.opener) {
-                console.log('Sending error to parent window:', error);
-                window.opener.postMessage({
-                    type: 'GMAIL_OAUTH_ERROR',
-                    error: error
-                }, window.location.origin);
+            // Check for OAuth response
+            const code = getUrlParameter('code');
+            const error = getUrlParameter('error');
+            const state = getUrlParameter('state');
+
+            debugLog(`OAuth params - Code: ${code ? 'present' : 'missing'}, Error: ${error || 'none'}`);
+
+            if (error) {
+                debugLog(`OAuth error detected: ${error}`);
+                updateStatus('Connection Failed', `Error: ${error}`, true);
                 
-                setTimeout(() => {
-                    window.close();
-                }, 3000);
+                // Send error to parent window if available
+                if (window.opener) {
+                    debugLog('Sending error to parent window');
+                    try {
+                        window.opener.postMessage({
+                            type: 'GMAIL_OAUTH_ERROR',
+                            error: error,
+                            timestamp: Date.now()
+                        }, window.location.origin);
+                        
+                        setTimeout(() => {
+                            debugLog('Closing popup window');
+                            window.close();
+                        }, 3000);
+                    } catch (e) {
+                        debugLog(`Error sending message to parent: ${e.message}`);
+                    }
+                } else {
+                    // Store error result for main app to process
+                    debugLog('No opener, storing error result');
+                    localStorage.setItem('gmail_oauth_result', JSON.stringify({
+                        type: 'GMAIL_OAUTH_ERROR',
+                        error: error,
+                        timestamp: Date.now()
+                    }));
+                    
+                    setTimeout(() => {
+                        redirectToApp();
+                    }, 3000);
+                }
+            } else if (code) {
+                debugLog(`OAuth success - Code received: ${code.substring(0, 10)}...`);
+                updateStatus('Connection Successful!', 'Gmail has been connected successfully.');
+                
+                // Send success to parent window if available
+                if (window.opener) {
+                    debugLog('Sending success to parent window');
+                    try {
+                        window.opener.postMessage({
+                            type: 'GMAIL_OAUTH_SUCCESS',
+                            code: code,
+                            state: state,
+                            timestamp: Date.now()
+                        }, window.location.origin);
+                        
+                        setTimeout(() => {
+                            debugLog('Closing popup window');
+                            window.close();
+                        }, 2000);
+                    } catch (e) {
+                        debugLog(`Error sending message to parent: ${e.message}`);
+                        // Fallback to storage method
+                        localStorage.setItem('gmail_oauth_result', JSON.stringify({
+                            type: 'GMAIL_OAUTH_SUCCESS',
+                            code: code,
+                            state: state,
+                            timestamp: Date.now()
+                        }));
+                        redirectToApp();
+                    }
+                } else {
+                    // Store success result for main app to process
+                    debugLog('No opener found, storing OAuth result');
+                    localStorage.setItem('gmail_oauth_result', JSON.stringify({
+                        type: 'GMAIL_OAUTH_SUCCESS',
+                        code: code,
+                        state: state,
+                        timestamp: Date.now()
+                    }));
+                    
+                    setTimeout(() => {
+                        redirectToApp();
+                    }, 2000);
+                }
             } else {
-                // If no opener (deployed environment), redirect with error
-                console.log('No opener, storing error result');
-                localStorage.setItem('gmail_oauth_result', JSON.stringify({
-                    type: 'GMAIL_OAUTH_ERROR',
-                    error: error
-                }));
+                debugLog('No OAuth parameters found');
+                updateStatus('Invalid Response', 'No authorization code received.', true);
                 
-                setTimeout(() => {
-                    redirectToApp();
-                }, 3000);
+                if (window.opener) {
+                    setTimeout(() => {
+                        debugLog('Closing popup window');
+                        window.close();
+                    }, 3000);
+                } else {
+                    setTimeout(() => {
+                        redirectToApp();
+                    }, 3000);
+                }
             }
-        } else if (code) {
-            updateStatus('Connection Successful!', 'Gmail has been connected successfully.');
+        } catch (e) {
+            debugLog(`Script error: ${e.message}`);
+            console.error('OAuth callback error:', e);
+            updateStatus('Script Error', 'An error occurred processing the OAuth response.', true);
             
-            // Send success to parent window
-            if (window.opener) {
-                console.log('Sending OAuth success to parent window with code:', code.substring(0, 10) + '...');
-                window.opener.postMessage({
-                    type: 'GMAIL_OAUTH_SUCCESS',
-                    code: code,
-                    state: state
-                }, window.location.origin);
-                
-                setTimeout(() => {
-                    window.close();
-                }, 2000);
-            } else {
-                // If no opener (deployed environment), store result and redirect
-                console.log('No opener found, storing OAuth result and redirecting...');
-                localStorage.setItem('gmail_oauth_result', JSON.stringify({
-                    type: 'GMAIL_OAUTH_SUCCESS',
-                    code: code,
-                    state: state
-                }));
-                
-                setTimeout(() => {
-                    redirectToApp();
-                }, 2000);
-            }
-        } else {
-            updateStatus('Invalid Response', 'No authorization code received.', true);
-            
-            if (window.opener) {
-                setTimeout(() => {
-                    window.close();
-                }, 3000);
-            } else {
-                setTimeout(() => {
-                    redirectToApp();
-                }, 3000);
-            }
+            // Try to redirect back to app even on error
+            setTimeout(() => {
+                redirectToApp();
+            }, 5000);
         }
+
+        // Fallback timeout
+        setTimeout(() => {
+            if (document.querySelector('.spinner').style.display !== 'none') {
+                debugLog('Timeout reached, forcing redirect');
+                updateStatus('Timeout', 'Processing took too long, redirecting...', true);
+                setTimeout(() => {
+                    redirectToApp();
+                }, 2000);
+            }
+        }, 30000); // 30 second timeout
     </script>
 </body>
 </html>

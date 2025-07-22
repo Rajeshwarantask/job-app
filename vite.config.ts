@@ -87,6 +87,12 @@ export default defineConfig(({ mode }: { mode: string }) => ({
                 purpose: 'maskable'
               }
         ],
+        // Exclude auth-callback.html from caching
+        globIgnores: ['**/auth-callback.html'],
+        // Add runtime exclusions
+        navigateFallback: 'index.html',
+        navigateFallbackAllowlist: [/^\/$/],
+        navigateFallbackDenylist: [/auth-callback\.html$/]
         categories: ['productivity', 'business', 'utilities'],
         screenshots: [
                 {

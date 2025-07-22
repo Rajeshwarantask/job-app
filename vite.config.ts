@@ -92,7 +92,7 @@ export default defineConfig(({ mode }: { mode: string }) => ({
         // Add runtime exclusions
         navigateFallback: 'index.html',
         navigateFallbackAllowlist: [/^\/$/],
-        navigateFallbackDenylist: [/auth-callback\.html$/]
+        navigateFallbackDenylist: [/auth-callback\.html$/],
         categories: ['productivity', 'business', 'utilities'],
         screenshots: [
                 {

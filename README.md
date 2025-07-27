@@ -26,7 +26,8 @@ JobTrail is a comprehensive job application tracking system that automatically m
 
 <img width="1000" height="869" alt="Screenshot 2025-07-18 190338" src="https://github.com/user-attachments/assets/5b80412f-6ff6-42ae-b806-e1683573226a" />
 <img width="999" height="869" alt="Screenshot 2025-07-18 190217" src="https://github.com/user-attachments/assets/81bd274d-a2db-49b2-bd80-0645737be602" />
-<img width="999" height="869" alt="Screenshot 2025-07-18 190217" src="https://github.com/user-attachments/assets/b544790e-29e6-4aad-95f3-9b11b6cdc911" />
+<img width="1900" height="870" alt="Screenshot 2025-07-18 190059" src="https://github.com/user-attachments/assets/50e69f95-61b2-432c-9f4f-4fd8de8ceb64" />
+
 
 
 ## 🛠️ Technical Implementation

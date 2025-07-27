@@ -24,6 +24,11 @@ JobTrail is a comprehensive job application tracking system that automatically m
 - **Revokable Access**: Disconnect Gmail integration anytime
 - **HTTPS Only**: Secure communication throughout
 
+<img width="1000" height="869" alt="Screenshot 2025-07-18 190338" src="https://github.com/user-attachments/assets/5b80412f-6ff6-42ae-b806-e1683573226a" />
+<img width="999" height="869" alt="Screenshot 2025-07-18 190217" src="https://github.com/user-attachments/assets/81bd274d-a2db-49b2-bd80-0645737be602" />
+<img width="999" height="869" alt="Screenshot 2025-07-18 190217" src="https://github.com/user-attachments/assets/b544790e-29e6-4aad-95f3-9b11b6cdc911" />
+
+
 ## 🛠️ Technical Implementation
 
 ### Gmail API Integration
@@ -57,25 +62,19 @@ const parsed = emails.map(email => gmailService.parseJobEmail(email));
 4. Configure the OAuth consent screen
 
 ### 2. Environment Variables
-```bash
-cp .env.example .env
-```
-
 Fill in your Google OAuth credentials:
 ```env
 VITE_GOOGLE_CLIENT_ID=your_client_id
 VITE_GOOGLE_CLIENT_SECRET=your_client_secret
-VITE_GOOGLE_REDIRECT_URI=http://localhost:5173/auth/callback
+VITE_GOOGLE_REDIRECT_URI=http://https:site/auth/callback
 ```
 
 ### 3. Installation & Development
 ```bash
 # Install dependencies
 npm install
-
 # Start development server
 npm run dev
-
 # Build for production
 npm run build
 ```
@@ -89,30 +88,14 @@ The application requests these minimal scopes:
 
 ## 📊 Email Detection Patterns
 
-### Application Confirmations
-- "Thank you for your application"
-- "Application received"
-- "We have received your application"
+| Category                 | Phrases                                                                 |
+|--------------------------|-------------------------------------------------------------------------|
+| **Application Confirmations** | "Thank you for your application"<br>"Application received"<br>"We have received your application" |
+| **Interview Invitations**     | "Interview invitation"<br>"You have been shortlisted"<br>"Schedule a call" |
+| **Test/Assessment Requests**  | "Coding challenge"<br>"Technical assessment"<br>"Online test"         |
+| **Job Offers**                | "Congratulations"<br>"Job offer"<br>"Welcome to our team"             |
+| **Rejections**                | "Unfortunately"<br>"Regret to inform"<br>"Not moving forward"         |
 
-### Interview Invitations
-- "Interview invitation"
-- "You have been shortlisted"
-- "Schedule a call"
-
-### Test/Assessment Requests
-- "Coding challenge"
-- "Technical assessment"
-- "Online test"
-
-### Job Offers
-- "Congratulations"
-- "Job offer"
-- "Welcome to our team"
-
-### Rejections
-- "Unfortunately"
-- "Regret to inform"
-- "Not moving forward"
 
 ## 🔒 Security Measures
 
@@ -128,21 +111,6 @@ The application requests these minimal scopes:
 - **Transparent Processing**: Clear indication of what data is used
 - **Easy Revocation**: One-click disconnect and data deletion
 
-## 🚀 Production Deployment
-
-### Google OAuth Verification
-For production use with more than 100 users:
-1. Submit your app for OAuth verification
-2. Provide privacy policy and terms of service
-3. Complete security assessment
-4. Demonstrate secure data handling
-
-### Scaling Considerations
-- **Rate Limiting**: Respect Gmail API quotas
-- **Caching**: Implement Redis for processed email IDs
-- **Background Jobs**: Use queue systems for email processing
-- **Monitoring**: Implement comprehensive logging and alerting
-
 ## 📈 Analytics & Insights
 
 The system provides detailed analytics:
@@ -151,22 +119,11 @@ The system provides detailed analytics:
 - **Timeline Analysis**: Understand typical hiring timelines
 - **Status Progression**: Visualize your application funnel
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Implement your changes
-4. Add tests for new functionality
-5. Submit a pull request
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🆘 Support
-
-For issues and questions:
-- Create an issue on GitHub
 - Check the documentation
 - Review the FAQ section
 
